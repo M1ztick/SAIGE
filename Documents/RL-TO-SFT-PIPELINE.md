@@ -1,5 +1,8 @@
 # RL-to-SFT Training Pipeline - Priority 2 Complete ✅
 
+> **Note:** This document describes the original v1 pipeline (`saige_to_sft.py`).
+> The current converter is **`saige_to_sft_v2.py`** — see [local-trainer/README.md](../local-trainer/README.md) for up-to-date usage.
+
 ## Summary
 
 Successfully created an automated training pipeline that converts SAIGE's experiential learning data (RL experiences) into supervised fine-tuning (SFT) format. This enables continuous model improvement through a feedback loop: better models → better responses → better training data → even better models.

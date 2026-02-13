@@ -13,8 +13,8 @@ DB_PATH="${DB_PATH:-../saige.db}"
 WORKER_URL="${WORKER_URL:-http://localhost:8787}"
 TRAINING_EPISODES="${TRAINING_EPISODES:-50}"
 MAX_HARM="${MAX_HARM:-0.25}"
-MIN_BUDDHIST="${MIN_BUDDHIST:-6.5}"
-MIN_ALIGNMENT="${MIN_ALIGNMENT:-good}"
+MIN_COMPOSITE="${MIN_COMPOSITE:-5.0}"
+MIN_CALIBRATION="${MIN_CALIBRATION:-2.0}"
 FORMAT="${FORMAT:-mistral}"
 
 echo "Configuration:"
@@ -22,8 +22,8 @@ echo "  Database: $DB_PATH"
 echo "  Worker URL: $WORKER_URL"
 echo "  Training Episodes: $TRAINING_EPISODES"
 echo "  Max Harm Threshold: $MAX_HARM"
-echo "  Min Buddhist Score: $MIN_BUDDHIST"
-echo "  Min Alignment: $MIN_ALIGNMENT"
+echo "  Min Composite Score: $MIN_COMPOSITE"
+echo "  Min Calibration Score: $MIN_CALIBRATION"
 echo "  Output Format: $FORMAT"
 echo ""
 
@@ -47,15 +47,16 @@ echo ""
 echo "📝 Step 2: Converting experiences to SFT training data..."
 echo ""
 
-python3 saige_to_sft.py \
+python3 saige_to_sft_v2.py \
     --db "$DB_PATH" \
-    --output "saige_training_data.csv" \
+    --output "saige_training_data_v2.csv" \
     --format "$FORMAT" \
     --max-harm "$MAX_HARM" \
-    --min-buddhist "$MIN_BUDDHIST" \
-    --min-alignment "$MIN_ALIGNMENT"
+    --min-composite "$MIN_COMPOSITE" \
+    --min-calibration "$MIN_CALIBRATION" \
+    --include-gold
 
-if [ ! -f "saige_training_data.csv" ]; then
+if [ ! -f "saige_training_data_v2.csv" ]; then
     echo "❌ Failed to generate training data"
     exit 1
 fi
@@ -69,7 +70,7 @@ echo "📦 Step 3: Preparing for fine-tuning..."
 echo ""
 
 # Count lines in training data
-line_count=$(wc -l < saige_training_data.csv)
+line_count=$(wc -l < saige_training_data_v2.csv)
 example_count=$((line_count - 1))  # Subtract header
 
 echo "   Training examples: $example_count"
@@ -117,7 +118,7 @@ echo "   1. Install training dependencies:"
 echo "      pip install transformers torch datasets trl peft accelerate"
 echo ""
 echo "   2. Run local fine-tuning:"
-echo "      python train_local.py --data saige_training_data.csv"
+echo "      python train_local.py --data saige_training_data_v2.csv"
 echo ""
 echo "Option B: Cloud Fine-tuning (Google Colab)"
 echo "   1. Upload saige_training_data.csv to Google Colab"
@@ -131,5 +132,5 @@ echo "   3. Deploy to Cloudflare Workers AI:"
 echo "      wrangler ai finetune create @cf/mistral/mistral-7b-instruct-v0.2-lora \\"
 echo "        saige-ethics-lora ./lora-adapters/"
 echo ""
-echo "Training data: $(pwd)/saige_training_data.csv"
+echo "Training data: $(pwd)/saige_training_data_v2.csv"
 echo "=========================================="
