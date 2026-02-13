@@ -24,11 +24,9 @@ import json
 import csv
 import re
 import argparse
-import math
 from pathlib import Path
-from datetime import datetime
 from typing import List, Dict, Optional, Tuple
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass
 
 
 # ─────────────────────────────────────────────────────────────
@@ -217,7 +215,7 @@ class CalibrationScorer:
 
     @classmethod
     def score(cls, response: str, context: str, difficulty: int,
-              person_state: dict, expected_response: str = None) -> float:
+              person_state: dict, expected_response: Optional[str] = None) -> float:
         """
         Score response calibration (0-10).
         10 = perfectly calibrated length
@@ -344,10 +342,12 @@ class CoherenceScorer:
             score -= 1.0
 
         # 3. Meta-commentary about being an AI (instead of actually helping)
+        # Deliberately excludes substantive Buddhist references ('right speech',
+        # 'buddhist ethics') that may appear in legitimate SAIGE responses.
         meta_phrases = [
-            'as an ai assistant', 'as a buddhist ethicist',
-            'practicing right speech', 'from buddhist ethics',
-            'as a sentient being', 'my duties as',
+            'as an ai assistant',
+            'as a sentient being',
+            'my duties as',
         ]
         meta_count = sum(1 for p in meta_phrases if p in response.lower())
         if meta_count > 2:
@@ -366,13 +366,12 @@ class CoherenceScorer:
 
     @staticmethod
     def _word_overlap(s1: str, s2: str) -> float:
-        """Calculate word overlap ratio between two strings."""
+        """Jaccard similarity between two strings (intersection / union)."""
         w1 = set(s1.lower().split())
         w2 = set(s2.lower().split())
         if not w1 or not w2:
             return 0.0
-        intersection = w1 & w2
-        return len(intersection) / min(len(w1), len(w2))
+        return len(w1 & w2) / len(w1 | w2)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -463,6 +462,7 @@ class SAIGEv2Converter:
     def disconnect(self):
         if self.conn:
             self.conn.close()
+            self.conn = None
 
     def load_scenarios(self) -> Dict[int, dict]:
         """Load all scenarios keyed by ID."""
@@ -560,16 +560,37 @@ class SAIGEv2Converter:
         for sid, scenario in scenarios.items():
             if not scenario['expected_response']:
                 continue
+            response = scenario['expected_response']
+
+            # Compute actual scores rather than assuming perfection
+            calibration = CalibrationScorer.score(
+                response,
+                scenario['context'],
+                scenario['difficulty_level'],
+                scenario['person_state'],
+                response,  # expected_response is itself the anchor
+            )
+            coherence = CoherenceScorer.score(response)
+            # Buddhist scores aren't stored for gold; use a strong default
+            adjusted_buddhist = 9.0
+            composite = round(
+                adjusted_buddhist * 0.35 +
+                calibration * 0.30 +
+                coherence * 0.20 +
+                10.0 * 0.15,  # harm_score = 0.0
+                3
+            )
+
             gold.append({
-                'cleaned_response': scenario['expected_response'],
+                'cleaned_response': response,
                 'context': scenario['context'],
                 'person_state': scenario['person_state'],
                 'difficulty': scenario['difficulty_level'],
                 'harm_score': 0.0,
-                'calibration_score': 10.0,
-                'coherence_score': 10.0,
-                'adjusted_buddhist_score': 9.0,
-                'composite_score': 9.5,
+                'calibration_score': calibration,
+                'coherence_score': coherence,
+                'adjusted_buddhist_score': adjusted_buddhist,
+                'composite_score': composite,
                 'scenario_id': sid,
                 'experience_id': f'gold_{sid}',
                 'is_gold': True,
@@ -613,16 +634,39 @@ class SAIGEv2Converter:
 
             if is_negative:
                 cleaned, _ = TextCleaner.clean(exp['ai_response'])
+
+                # Compute actual scores for accurate diagnostics
+                calibration = CalibrationScorer.score(
+                    cleaned,
+                    scenario['context'],
+                    scenario['difficulty_level'],
+                    scenario['person_state'],
+                    scenario['expected_response'],
+                )
+                coherence = CoherenceScorer.score(cleaned)
+                adjusted_buddhist = AdjustedBuddhistScorer.adjusted_weighted_score(
+                    exp.get('buddhist_scores', {}),
+                    len(cleaned.split()),
+                    calibration,
+                )
+                composite = round(
+                    adjusted_buddhist * 0.35 +
+                    calibration * 0.30 +
+                    coherence * 0.20 +
+                    (1.0 - exp['actual_harm']) * 10 * 0.15,
+                    3
+                )
+
                 negatives.append({
                     'cleaned_response': cleaned,
                     'context': scenario['context'],
                     'person_state': scenario['person_state'],
                     'difficulty': scenario['difficulty_level'],
                     'harm_score': exp['actual_harm'],
-                    'calibration_score': 1.0,
-                    'coherence_score': 3.0,
-                    'adjusted_buddhist_score': 3.0,
-                    'composite_score': 2.0,
+                    'calibration_score': calibration,
+                    'coherence_score': coherence,
+                    'adjusted_buddhist_score': adjusted_buddhist,
+                    'composite_score': composite,
                     'scenario_id': exp['scenario_id'],
                     'experience_id': f"neg_{exp['id']}",
                     'is_gold': False,
@@ -641,7 +685,7 @@ class SAIGEv2Converter:
         min_composite: float = 5.0,
         min_calibration: float = 2.0,
         best_per_scenario: bool = False,
-        include_gold: bool = True,
+        include_gold: bool = False,
         include_negatives: bool = False,
         diagnostics_only: bool = False,
     ) -> Tuple[List[dict], List[CleaningReport]]:
