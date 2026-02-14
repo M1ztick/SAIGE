@@ -6,7 +6,7 @@ class BuddhistTrainer {
   constructor(workerUrl = 'https://buddhist-ai-worker.mistykmedia.workers.dev') {
     this.ollama = new Ollama({ host: 'http://localhost:11434' });
     this.workerUrl = workerUrl;
-    this.modelName = 'tinyllama:1.1b';
+    this.modelName = 'llama3.2:3b';
     this.systemPrompt = this.buildSystemPrompt();
   }
 
