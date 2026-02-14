@@ -11,15 +11,19 @@ class BuddhistTrainer {
   }
 
   buildSystemPrompt() {
-    return `You are an AI assistant learning to practice Right Speech from Buddhist ethics. 
+    return `You are a helpful AI assistant.
 
-Your goal is to respond helpfully while minimizing harm through:
-- Truthfulness without deception
-- Kindness without harshness  
-- Completeness without harmful omission
-- Genuine help without manipulation
-
-Consider the person's emotional state and vulnerability. Speak with wisdom and compassion.`;
+RULES:
+1. RESPOND DIRECTLY to what the person said. Do not describe what you will say — just say it.
+2. MATCH your response length to the complexity of the request:
+   - Greetings ("hi", "hey", "thanks"): 1 sentence, under 15 words
+   - Simple questions: 2-3 sentences
+   - Requests for help: 3-5 sentences with actionable advice
+   - Complex or emotional topics: 3-6 sentences, warm and specific
+3. NEVER start with "AI:", "AI assistant:", "Dear person", or similar prefixes.
+4. NEVER end with a signature, sign-off, or "don't hesitate to reach out".
+5. NEVER lecture about ethics, Buddhism, or communication principles.
+6. Be honest, kind, and genuinely helpful through your ACTIONS, not by talking about being helpful.`;
   }
 
   async getRandomScenario(maxDifficulty = 5) {
@@ -34,13 +38,22 @@ Consider the person's emotional state and vulnerability. Speak with wisdom and c
   }
 
   async generateResponse(scenario) {
-    const prompt = `Context: ${scenario.context}
+    const personState = scenario.person_state || {};
+    const stateDesc = `Emotional state: ${personState.mood || 'neutral'}, Vulnerability: ${personState.vulnerability || 'low'}`;
 
-Person's state: ${JSON.stringify(scenario.person_state)}
-Known facts: ${JSON.stringify(scenario.facts)}
-Critical information: ${JSON.stringify(scenario.critical_info)}
+    const facts = Array.isArray(scenario.facts) && scenario.facts.length > 0
+      ? `\nKey facts:\n${scenario.facts.map(f => `- ${f}`).join('\n')}`
+      : '';
 
-Please respond with Right Speech - truthful, kind, complete, and genuinely helpful:`;
+    const critical = Array.isArray(scenario.critical_info) && scenario.critical_info.length > 0
+      ? `\nCritical to address:\n${scenario.critical_info.map(c => `- ${c}`).join('\n')}`
+      : '';
+
+    const prompt = `${scenario.context}
+
+${stateDesc}${facts}${critical}
+
+Respond:`;
 
     try {
       const response = await this.ollama.generate({
@@ -48,8 +61,9 @@ Please respond with Right Speech - truthful, kind, complete, and genuinely helpf
         prompt: prompt,
         system: this.systemPrompt,
         options: {
-          temperature: 0.7,
-          top_p: 0.9
+          temperature: 0.5,
+          top_p: 0.85,
+          num_predict: 200
         }
       });
       

@@ -24,7 +24,7 @@ experience_id,scenario_id,original_word_count,cleaned_word_count,typos_fixed,pla
 23,29,213,213,0,0,False,0,7.0,7.1,7.288,True,
 24,25,275,272,0,2,False,0,10.0,7.85,8.013,True,
 25,6,340,340,0,0,False,0,0.5,7.485,5.858,False,calibration=0.5 < 2.0
-26,15,237,235,2,0,False,0,0.5,5.46,4.795,False,composite=4.73 < 5.0
+26,15,237,235,2,0,False,0,0.5,5.46,4.795,False,composite=4.93 < 5.0
 27,8,325,323,2,0,False,1,0.5,6.405,5.112,False,calibration=0.5 < 2.0
 28,6,105,105,1,0,False,0,5.0,5.33,5.33,True,
 29,9,473,458,7,0,False,1,0.5,6.46,4.409,False,composite=4.79 < 5.0
@@ -44,10 +44,10 @@ experience_id,scenario_id,original_word_count,cleaned_word_count,typos_fixed,pla
 43,6,143,143,1,0,False,0,3.0,6.39,6.134,True,
 44,11,155,155,2,0,False,0,7.0,6.595,6.859,True,
 45,29,242,236,1,1,True,1,7.0,6.81,6.827,True,
-46,3,289,288,2,0,False,1,0.5,6.46,5.361,False,composite=4.93 < 5.0
+46,3,289,288,2,0,False,1,0.5,6.46,5.361,False,calibration=0.5 < 2.0
 47,20,284,283,0,0,False,1,10.0,7.59,7.656,True,
 48,24,105,103,1,0,False,1,10.0,6.56,7.216,True,
-49,3,409,389,6,0,False,7,0.5,6.56,4.841,False,composite=4.74 < 5.0
+49,3,409,389,6,0,False,7,0.5,6.56,4.841,False,composite=4.94 < 5.0
 50,21,301,300,0,1,False,0,3.0,6.47,5.59,True,
 51,7,201,201,0,0,False,0,1.5,6.32,5.872,False,calibration=1.5 < 2.0
 52,22,294,294,0,0,False,0,10.0,7.66,7.634,True,
@@ -122,7 +122,7 @@ experience_id,scenario_id,original_word_count,cleaned_word_count,typos_fixed,pla
 121,19,273,273,2,0,False,0,7.0,6.755,6.512,True,
 122,24,197,197,1,0,False,0,10.0,7.97,8.767,True,
 123,12,720,705,0,1,False,14,0.5,8.29,5.658,False,composite=4.93 < 5.0
-124,4,749,731,3,0,False,18,0.5,7.03,4.798,False,composite=4.53 < 5.0
+124,4,749,731,3,0,False,18,0.5,7.03,4.798,False,composite=4.73 < 5.0
 125,10,341,339,1,0,False,1,0.5,7.75,6.072,False,calibration=0.5 < 2.0
 126,21,282,282,0,0,False,0,3.0,6.77,5.966,True,
 127,25,139,139,0,0,False,0,10.0,6.08,6.688,True,
@@ -135,7 +135,7 @@ experience_id,scenario_id,original_word_count,cleaned_word_count,typos_fixed,pla
 134,27,332,327,0,2,True,0,3.0,7.645,6.407,True,
 135,12,314,308,1,1,True,0,3.0,6.065,5.194,True,
 136,23,127,126,0,0,False,1,7.0,5.66,5.886,True,
-137,10,281,272,5,1,True,1,0.5,6.575,5.552,False,composite=4.99 < 5.0
+137,10,281,272,5,1,True,1,0.5,6.575,5.552,False,calibration=0.5 < 2.0
 138,10,163,161,0,0,False,1,0.5,7.01,6.379,False,calibration=0.5 < 2.0
 139,22,322,319,2,0,False,1,7.0,5.865,5.374,True,
 140,26,178,178,0,0,False,0,7.0,6.795,7.067,True,
