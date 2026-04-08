@@ -4,6 +4,10 @@
 *.sqlite-shm
 *.sqlite-wal
 
+# ML training artifacts
+*.tfevents.*
+Documents/
+
 # Node modules (if you add them later)
 node_modules/
 
