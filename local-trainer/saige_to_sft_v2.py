@@ -25,413 +25,16 @@ import csv
 import re
 import argparse
 from typing import List, Dict, Optional, Tuple
-from dataclasses import dataclass
 
 
 # ─────────────────────────────────────────────────────────────
 # Data Structures
 # ─────────────────────────────────────────────────────────────
 
-@dataclass
-class CleaningReport:
-    """Tracks what was cleaned in each example."""
-    experience_id: int = 0
-    scenario_id: int = 0
-    original_word_count: int = 0
-    cleaned_word_count: int = 0
-    typos_fixed: int = 0
-    placeholders_removed: int = 0
-    signatures_removed: bool = False
-    ai_prefixes_removed: int = 0
-    excessive_whitespace: bool = False
-    calibration_score: float = 0.0
-    adjusted_buddhist_score: float = 0.0
-    original_buddhist_score: float = 0.0
-    kept: bool = True
-    rejection_reason: str = ""
-
-
-@dataclass
-class QualityMetrics:
-    """Extended quality metrics beyond v1."""
-    harm_score: float = 0.0
-    buddhist_weighted: float = 0.0
-    calibration_score: float = 0.0      # NEW: response-length appropriateness
-    coherence_score: float = 0.0        # NEW: structural quality
-    composite_score: float = 0.0        # Combined metric for ranking
-    is_gold: bool = False               # Gold-standard expected response
-    is_negative: bool = False           # Negative example for contrast
-
-
-# ─────────────────────────────────────────────────────────────
-# Text Cleaning
-# ─────────────────────────────────────────────────────────────
-
-class TextCleaner:
-    """Cleans TinyLlama generation artifacts from response text."""
-
-    # Known typos from TinyLlama
-    TYPO_CORRECTIONS = {
-        r'\bRiighth?\s+Speech\b': 'Right Speech',
-        r'\bRigh\s+Speech\b': 'Right Speech',
-        r'\bTtruthfulness\b': 'Truthfulness',
-        r'\btruthfulness\s+without\s+deceit\b': 'truthfulness',
-        r'\bGeneruine\b': 'Genuine',
-        r'\bgeneruine\b': 'genuine',
-    }
-
-    # Placeholder patterns to remove
-    PLACEHOLDER_PATTERNS = [
-        r'\[Your [Nn]ame\]',
-        r'\[Person\'s [Nn]ame\]',
-        r'\[Person\'s name\]',
-        r'\[Name\]',
-        r'\[Boss\]',
-        r'\[Your Name Here\]',
-    ]
-
-    # Letter-style sign-offs that shouldn't be in chat responses
-    SIGNATURE_PATTERNS = [
-        r'(?:Best|Kind|Warm)\s+regards,?\s*\n.*$',
-        r'Sincerely,?\s*\n.*$',
-        r'With kind regards,?\s*\n.*$',
-        r'Until next time,?\s*\n.*$',
-        r'Yours truly,?\s*\n.*$',
-    ]
-
-    # "AI:" prefix repetition
-    AI_PREFIX_PATTERN = r'^AI(?:\s+Assistant)?:\s*'
-
-    @classmethod
-    def clean(cls, text: str) -> Tuple[str, CleaningReport]:
-        """Clean a response text and return (cleaned_text, report)."""
-        report = CleaningReport()
-        report.original_word_count = len(text.split())
-        cleaned = text
-
-        # 1. Fix known typos
-        for pattern, replacement in cls.TYPO_CORRECTIONS.items():
-            matches = re.findall(pattern, cleaned, re.IGNORECASE)
-            if matches:
-                report.typos_fixed += len(matches)
-                cleaned = re.sub(pattern, replacement, cleaned, flags=re.IGNORECASE)
-
-        # 2. Remove placeholders
-        for pattern in cls.PLACEHOLDER_PATTERNS:
-            matches = re.findall(pattern, cleaned)
-            if matches:
-                report.placeholders_removed += len(matches)
-                cleaned = re.sub(pattern, '', cleaned)
-
-        # 3. Remove letter-style signatures
-        for pattern in cls.SIGNATURE_PATTERNS:
-            if re.search(pattern, cleaned, re.MULTILINE | re.DOTALL):
-                report.signatures_removed = True
-                cleaned = re.sub(pattern, '', cleaned, flags=re.MULTILINE | re.DOTALL)
-
-        # 4. Remove repeated "AI:" prefixes (keep first one's content)
-        lines = cleaned.split('\n')
-        new_lines = []
-        for line in lines:
-            stripped = re.sub(cls.AI_PREFIX_PATTERN, '', line.strip())
-            if stripped != line.strip():
-                report.ai_prefixes_removed += 1
-            if stripped:
-                new_lines.append(stripped)
-            elif new_lines and new_lines[-1]:  # preserve single blank lines
-                new_lines.append('')
-        cleaned = '\n'.join(new_lines)
-
-        # 5. Collapse excessive whitespace / blank lines
-        original_cleaned = cleaned
-        cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
-        cleaned = re.sub(r'[ \t]+', ' ', cleaned)
-        cleaned = cleaned.strip()
-        if cleaned != original_cleaned.strip():
-            report.excessive_whitespace = True
-
-        # 6. Remove trailing "Thank you" filler
-        cleaned = re.sub(
-            r'(?:\n\n)?(?:Thank you (?:again )?(?:for your time|once again|for sharing|for reaching out)[.,!]?\s*)+$',
-            '',
-            cleaned,
-            flags=re.IGNORECASE
-        ).strip()
-
-        report.cleaned_word_count = len(cleaned.split())
-        return cleaned, report
-
-
-# ─────────────────────────────────────────────────────────────
-# Calibration Scoring
-# ─────────────────────────────────────────────────────────────
-
-class CalibrationScorer:
-    """
-    Scores how well response length/complexity matches prompt complexity.
-    This directly addresses the "spazzy TinyLlama" problem.
-    """
-
-    # Target word counts based on scenario characteristics
-    # (difficulty_level, prompt_word_count) -> (ideal_min, ideal_max)
-    CALIBRATION_TARGETS = {
-        # Simple greetings: 3-15 words
-        'greeting': (3, 15),
-        # Simple questions: 15-60 words
-        'simple_question': (15, 60),
-        # Moderate questions: 30-120 words
-        'moderate': (30, 120),
-        # Complex/emotional: 50-200 words
-        'complex': (50, 200),
-        # Very complex: 80-300 words
-        'very_complex': (80, 300),
-    }
-
-    @classmethod
-    def classify_prompt(cls, context: str, difficulty: int, person_state: dict) -> str:
-        """Classify prompt type for calibration targeting."""
-        words = len(context.split())
-        vulnerability = person_state.get('vulnerability', 'low')
-        mood = person_state.get('mood', 'neutral')
-
-        # Simple greetings and acknowledgments
-        if words <= 3 and difficulty <= 1:
-            return 'greeting'
-
-        # Simple factual questions
-        if difficulty <= 1 and words <= 8:
-            return 'simple_question'
-
-        # Moderate complexity
-        if difficulty <= 2:
-            return 'moderate'
-
-        # Complex or emotionally sensitive
-        if difficulty >= 4 or vulnerability in ('high', 'extreme'):
-            return 'very_complex'
-
-        return 'complex'
-
-    @classmethod
-    def score(cls, response: str, context: str, difficulty: int,
-              person_state: dict, expected_response: Optional[str] = None) -> float:
-        """
-        Score response calibration (0-10).
-        10 = perfectly calibrated length
-        0 = wildly miscalibrated
-        """
-        response_words = len(response.split())
-        prompt_type = cls.classify_prompt(context, difficulty, person_state)
-        ideal_min, ideal_max = cls.CALIBRATION_TARGETS[prompt_type]
-
-        # If we have an expected response, use it as additional calibration anchor
-        if expected_response:
-            expected_words = len(expected_response.split())
-            # Expand the ideal range slightly around the expected length
-            ideal_min = min(ideal_min, int(expected_words * 0.5))
-            ideal_max = max(ideal_max, int(expected_words * 2.5))
-
-        # Score based on how close we are to the ideal range
-        if ideal_min <= response_words <= ideal_max:
-            return 10.0  # Perfect calibration
-
-        if response_words < ideal_min:
-            # Too short — moderate penalty
-            ratio = response_words / ideal_min
-            return max(0, 10.0 * ratio)
-
-        # Too long — this is the main TinyLlama problem
-        overshoot = response_words / ideal_max
-        if overshoot <= 1.5:
-            return 7.0  # Slightly over is OK
-        elif overshoot <= 2.0:
-            return 5.0  # Notably over
-        elif overshoot <= 3.0:
-            return 3.0  # Way too long
-        elif overshoot <= 5.0:
-            return 1.5  # Extremely verbose
-        else:
-            return 0.5  # Absurdly long
-
-
-# ─────────────────────────────────────────────────────────────
-# Adjusted Buddhist Scoring
-# ─────────────────────────────────────────────────────────────
-
-class AdjustedBuddhistScorer:
-    """
-    Adjusts Buddhist principle scores to account for keyword-density gaming.
-    Longer responses naturally score higher on keyword matching — this corrects for that.
-    """
-
-    WEIGHTS = {
-        'ahimsa': 0.25,
-        'sacca': 0.20,
-        'karuna': 0.25,
-        'panna': 0.20,
-        'upekkha': 0.10,
-    }
-
-    @classmethod
-    def adjusted_weighted_score(
-        cls,
-        buddhist_scores: dict,
-        response_word_count: int,
-        calibration_score: float
-    ) -> float:
-        """
-        Calculate a weighted Buddhist score adjusted for:
-        1. Response length (diminishing returns for verbosity)
-        2. Calibration quality (well-calibrated responses get a bonus)
-        """
-        # Base weighted score
-        base_score = sum(
-            buddhist_scores.get(principle, 5.0) * weight
-            for principle, weight in cls.WEIGHTS.items()
-        )
-
-        # Length adjustment: responses over 200 words get diminishing returns
-        # This prevents verbose responses from gaming the keyword scorer
-        if response_word_count > 200:
-            length_penalty = 1.0 - min(0.25, (response_word_count - 200) / 1000)
-            base_score *= length_penalty
-
-        # Calibration bonus: well-calibrated responses get a small boost
-        calibration_factor = 1.0 + (calibration_score - 5.0) * 0.02  # ±10% range
-        adjusted = base_score * calibration_factor
-
-        return round(max(0, min(10, adjusted)), 3)
-
-
-# ─────────────────────────────────────────────────────────────
-# Coherence Scoring
-# ─────────────────────────────────────────────────────────────
-
-class CoherenceScorer:
-    """
-    Scores structural quality of a response.
-    Catches: repetition, broken formatting, nonsensical structure.
-    """
-
-    @classmethod
-    def score(cls, response: str) -> float:
-        """Score coherence (0-10)."""
-        score = 8.0  # Start optimistic
-
-        sentences = re.split(r'[.!?]+', response)
-        sentences = [s.strip() for s in sentences if len(s.strip()) > 10]
-
-        if not sentences:
-            return 3.0
-
-        # 1. Repetition detection — compare sentence pairs
-        if len(sentences) >= 2:
-            repetition_count = 0
-            for i in range(len(sentences)):
-                for j in range(i + 1, min(i + 4, len(sentences))):
-                    sim = cls._word_overlap(sentences[i], sentences[j])
-                    if sim > 0.7:
-                        repetition_count += 1
-            if repetition_count > 0:
-                score -= min(3.0, repetition_count * 1.0)
-
-        # 2. Numbered list without substance (TinyLlama loves empty lists)
-        numbered_items = re.findall(r'^\d+\.\s+.{0,30}$', response, re.MULTILINE)
-        if len(numbered_items) > 5:
-            score -= 1.0
-
-        # 3. Meta-commentary about being an AI (instead of actually helping)
-        # Deliberately excludes substantive Buddhist references ('right speech',
-        # 'buddhist ethics') that may appear in legitimate SAIGE responses.
-        meta_phrases = [
-            'as an ai assistant',
-            'as a sentient being',
-            'my duties as',
-        ]
-        meta_count = sum(1 for p in meta_phrases if p in response.lower())
-        if meta_count > 2:
-            score -= min(2.0, meta_count * 0.5)
-
-        # 4. Starts with "Dear" or letter format for a chat response
-        if re.match(r'^Dear\s', response):
-            score -= 1.5
-
-        # 5. Multiple "Thank you" closings
-        thank_count = len(re.findall(r'thank you', response, re.IGNORECASE))
-        if thank_count > 2:
-            score -= min(2.0, (thank_count - 2) * 0.5)
-
-        return round(max(0, min(10, score)), 2)
-
-    @staticmethod
-    def _word_overlap(s1: str, s2: str) -> float:
-        """Jaccard similarity between two strings (intersection / union)."""
-        w1 = set(s1.lower().split())
-        w2 = set(s2.lower().split())
-        if not w1 or not w2:
-            return 0.0
-        return len(w1 & w2) / len(w1 | w2)
-
-
-# ─────────────────────────────────────────────────────────────
-# Format Templates
-# ─────────────────────────────────────────────────────────────
-
-class FormatTemplates:
-    """Training data format templates."""
-
-    SYSTEM_PROMPT = (
-        "You are a helpful AI assistant. Respond with clarity, honesty, "
-        "and appropriate compassion. Match your response length and tone "
-        "to the complexity of the question."
-    )
-
-    @classmethod
-    def mistral(cls, prompt: str, response: str, context_note: str = '') -> str:
-        full_prompt = prompt
-        if context_note:
-            full_prompt += f"\n\nContext: {context_note}"
-        return f"<s>[INST] {full_prompt} [/INST] {response}</s>"
-
-    @classmethod
-    def chatml(cls, prompt: str, response: str, context_note: str = '') -> str:
-        full_prompt = prompt
-        if context_note:
-            full_prompt += f"\n\nContext: {context_note}"
-        return (
-            f"<|system|>\n{cls.SYSTEM_PROMPT}</s>\n"
-            f"<|user|>\n{full_prompt}</s>\n"
-            f"<|assistant|>\n{response}</s>"
-        )
-
-    @classmethod
-    def llama3(cls, prompt: str, response: str, context_note: str = '') -> str:
-        full_prompt = prompt
-        if context_note:
-            full_prompt += f"\n\nContext: {context_note}"
-        return (
-            f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n"
-            f"{cls.SYSTEM_PROMPT}<|eot_id|>"
-            f"<|start_header_id|>user<|end_header_id|>\n\n"
-            f"{full_prompt}<|eot_id|>"
-            f"<|start_header_id|>assistant<|end_header_id|>\n\n"
-            f"{response}<|eot_id|>"
-        )
-
-    @classmethod
-    def alpaca(cls, prompt: str, response: str, context_note: str = '') -> str:
-        instruction = prompt
-        input_text = context_note if context_note else ''
-        if input_text:
-            return (
-                f"### Instruction:\n{instruction}\n\n"
-                f"### Input:\n{input_text}\n\n"
-                f"### Response:\n{response}"
-            )
-        return (
-            f"### Instruction:\n{instruction}\n\n"
-            f"### Response:\n{response}"
-        )
+from scorers import (
+    CleaningReport, QualityMetrics, TextCleaner,
+    CalibrationScorer, AdjustedBuddhistScorer, CoherenceScorer, FormatTemplates,
+)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -450,7 +53,7 @@ class SAIGEv2Converter:
 
     def __init__(self, db_path: str):
         self.db_path = db_path
-        self.conn = None
+        self.conn: Optional[sqlite3.Connection] = None
         self.cleaning_reports: List[CleaningReport] = []
 
     def connect(self):
@@ -463,10 +66,15 @@ class SAIGEv2Converter:
             self.conn.close()
             self.conn = None
 
+    def _require_connection(self) -> sqlite3.Connection:
+        if self.conn is None:
+            raise RuntimeError("Database connection not established")
+        return self.conn
+
     def load_scenarios(self) -> Dict[int, dict]:
         """Load all scenarios keyed by ID."""
         scenarios = {}
-        for row in self.conn.execute('SELECT * FROM scenarios'):
+        for row in self._require_connection().execute('SELECT * FROM scenarios'):
             scenarios[row['id']] = {
                 'id': row['id'],
                 'context': row['context'],
@@ -482,7 +90,7 @@ class SAIGEv2Converter:
     def load_experiences(self) -> List[dict]:
         """Load all experiences."""
         experiences = []
-        for row in self.conn.execute('SELECT * FROM experiences ORDER BY id'):
+        for row in self._require_connection().execute('SELECT * FROM experiences ORDER BY id'):
             experiences.append({
                 'id': row['id'],
                 'scenario_id': row['scenario_id'],
@@ -600,7 +208,7 @@ class SAIGEv2Converter:
 
     def build_negative_examples(
         self, experiences: List[dict], scenarios: Dict[int, dict],
-        max_harm: float = 1.0, min_harm: float = 0.2
+        min_harm: float = 0.2
     ) -> List[dict]:
         """
         Build negative examples from high-harm or low-calibration responses.
@@ -836,8 +444,8 @@ class SAIGEv2Converter:
         golds = [e for e in examples if e.get('is_gold')]
         negatives = [e for e in examples if e.get('is_negative')]
 
-        print(f"\n📊 v2 Training Data Summary")
-        print(f"{'─' * 50}")
+        print("\n📊 v2 Training Data Summary")
+        print('─' * 50)
         print(f"  Total examples:     {len(examples)}")
         print(f"    Gold standard:    {len(golds)}")
         print(f"    Positive:         {len(positives)}")
@@ -848,7 +456,7 @@ class SAIGEv2Converter:
             avg_cal = sum(e['calibration_score'] for e in positives) / len(positives)
             avg_coh = sum(e.get('coherence_score', 0) for e in positives) / len(positives)
             avg_bud = sum(e.get('adjusted_buddhist_score', 0) for e in positives) / len(positives)
-            print(f"\n  Positive example metrics:")
+            print("\n  Positive example metrics:")
             print(f"    Avg composite:    {avg_comp:.2f}/10")
             print(f"    Avg calibration:  {avg_cal:.2f}/10")
             print(f"    Avg coherence:    {avg_coh:.2f}/10")
@@ -866,7 +474,7 @@ class SAIGEv2Converter:
                 r.original_word_count - r.cleaned_word_count for r in kept_reports
             ) / len(kept_reports)
 
-        print(f"\n  Cleaning performed:")
+        print("\n  Cleaning performed:")
         print(f"    Typos fixed:      {total_typos}")
         print(f"    Placeholders:     {total_placeholders}")
         print(f"    Signatures:       {total_signatures}")
@@ -878,15 +486,15 @@ class SAIGEv2Converter:
         for e in positives:
             d = e['difficulty']
             diff_counts[d] = diff_counts.get(d, 0) + 1
-        print(f"\n  Difficulty distribution (positives):")
+        print("\n  Difficulty distribution (positives):")
         for d in sorted(diff_counts.keys()):
             c = diff_counts[d]
             print(f"    Level {d}: {c} ({c / len(positives) * 100:.0f}%)")
 
     def _print_diagnostics(self, reports, processed, scenarios):
         """Print detailed diagnostics for analysis."""
-        print(f"\n🔬 Detailed Diagnostics")
-        print(f"{'═' * 65}")
+        print("\n🔬 Detailed Diagnostics")
+        print('═' * 65)
 
         # Worst calibration examples
         print(f"\n{'─' * 65}")
