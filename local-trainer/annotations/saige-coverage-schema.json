@@ -1,0 +1,1261 @@
+{
+  "schema_version": "0.1",
+  "description": "Master coverage plan for SAIGE annotation records. Each entry is a candidate canonical source to be annotated at the standard established by saige-rs-001/002/003.",
+  "id_prefix_legend": {
+    "rs": "right_speech",
+    "ri": "right_intention",
+    "rv": "right_view",
+    "ra": "right_action",
+    "rl": "right_livelihood",
+    "re": "right_effort",
+    "rm": "right_mindfulness",
+    "rc": "right_concentration",
+    "bv": "brahmaviharas",
+    "wp": "wisdom_panna",
+    "my": "mahayana_optional"
+  },
+  "status_legend": {
+    "pending": "not yet drafted",
+    "drafted": "record written, not reviewed",
+    "reviewed": "approved by annotation_author",
+    "committed": "in version control and active"
+  },
+  "candidates": [
+    {
+      "draft_id": "saige-rs-001",
+      "canonical_id": "SN 45.8",
+      "title": "Definition of Right Speech",
+      "collection": "SN",
+      "path_factor": "right_speech",
+      "theme_tags": [
+        "truthfulness",
+        "non-divisiveness",
+        "non-harshness",
+        "restraint"
+      ],
+      "source_url": "https://suttacentral.net/sn45.8/en/sujato",
+      "priority": 1,
+      "status": "committed",
+      "notes": "Foundational behavioral floor. Four verbal misconduct types map directly to AI failure modes."
+    },
+    {
+      "draft_id": "saige-rs-002",
+      "canonical_id": "MN 58",
+      "title": "Speech Should Be True, Beneficial, and Timely",
+      "collection": "MN",
+      "path_factor": "right_speech",
+      "theme_tags": [
+        "truthfulness",
+        "benefit",
+        "timing",
+        "compassion"
+      ],
+      "source_url": "https://suttacentral.net/mn58/en/sujato",
+      "priority": 1,
+      "status": "committed",
+      "notes": "Key bridge between raw accuracy and contextual usefulness. Combats technically-correct-but-harmful outputs."
+    },
+    {
+      "draft_id": "saige-rs-003",
+      "canonical_id": "MN 61",
+      "title": "Reflect Before, During, and After Speech",
+      "collection": "MN",
+      "path_factor": "right_speech",
+      "theme_tags": [
+        "reflection",
+        "self-monitoring",
+        "harm_reduction",
+        "iteration"
+      ],
+      "source_url": "https://suttacentral.net/mn61/en/sujato",
+      "priority": 1,
+      "status": "committed",
+      "notes": "Maps to pre-generation, in-generation, and post-generation evaluation — a direct blueprint for the SAIGE pipeline."
+    },
+    {
+      "draft_id": "saige-rs-004",
+      "canonical_id": "AN 5.198",
+      "title": "Five Factors of Well-Spoken Speech",
+      "collection": "AN",
+      "path_factor": "right_speech",
+      "theme_tags": [
+        "timely",
+        "truthful",
+        "gentle",
+        "purposeful",
+        "compassionate"
+      ],
+      "source_url": "https://suttacentral.net/an5.198/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "Positive checklist framing rather than the prohibitive framing of SN 45.8. Excellent companion to rs-001."
+    },
+    {
+      "draft_id": "saige-rs-005",
+      "canonical_id": "MN 21",
+      "title": "The Saw Simile — Speech Under Provocation",
+      "collection": "MN",
+      "path_factor": "right_speech",
+      "theme_tags": [
+        "non-reactivity",
+        "equanimity",
+        "hostility",
+        "patience"
+      ],
+      "source_url": "https://suttacentral.net/mn21/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "Extreme case test for non-harshness. Even under verbal attack, hostile escalation is not right speech. Critical for adversarial user interactions."
+    },
+    {
+      "draft_id": "saige-rs-006",
+      "canonical_id": "AN 4.183",
+      "title": "Four Types of Persons in Terms of Speech",
+      "collection": "AN",
+      "path_factor": "right_speech",
+      "theme_tags": [
+        "typology",
+        "self-awareness",
+        "discernment",
+        "verbal conduct"
+      ],
+      "source_url": "https://suttacentral.net/an4.183/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Typological — distinguishes those who speak what is good/bad about themselves/others. Useful for modeling self-assessment behavior."
+    },
+    {
+      "draft_id": "saige-rs-007",
+      "canonical_id": "Dhp 1-2",
+      "title": "Mind as Forerunner of Speech and Action",
+      "collection": "Dhp",
+      "path_factor": "right_speech",
+      "theme_tags": [
+        "intention",
+        "mind",
+        "causality",
+        "verbal_conduct"
+      ],
+      "source_url": "https://suttacentral.net/dhp1-20/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Grounds speech ethics in intention — relevant for distinguishing a model that generates correct-sounding text from one that is genuinely oriented toward benefit."
+    },
+    {
+      "draft_id": "saige-rs-008",
+      "canonical_id": "Sn 3.3",
+      "title": "The Sword Simile — Harsh Speech Cuts Both Ways",
+      "collection": "Sn",
+      "path_factor": "right_speech",
+      "theme_tags": [
+        "harsh_speech",
+        "consequence",
+        "self-harm",
+        "verbal_violence"
+      ],
+      "source_url": "https://suttacentral.net/snp3.3/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Illustrates that harsh speech harms the speaker and the listener. Grounds non-harshness as consequentialist, not merely rule-based."
+    },
+    {
+      "draft_id": "saige-rs-009",
+      "canonical_id": "AN 3.68",
+      "title": "Three Kinds of People in Their Use of Speech",
+      "collection": "AN",
+      "path_factor": "right_speech",
+      "theme_tags": [
+        "typology",
+        "discernment",
+        "evaluation",
+        "calibration"
+      ],
+      "source_url": "https://suttacentral.net/an3.68/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Evaluative typology for speech behavior. Could anchor a scoring rubric for generated responses."
+    },
+    {
+      "draft_id": "saige-rs-010",
+      "canonical_id": "AN 10.69",
+      "title": "Ten Unwholesome Courses of Action — Speech Portion",
+      "collection": "AN",
+      "path_factor": "right_speech",
+      "theme_tags": [
+        "lying",
+        "divisive_speech",
+        "harsh_speech",
+        "idle_chatter",
+        "prohibitive"
+      ],
+      "source_url": "https://suttacentral.net/an10.69/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Expands the four verbal misconducts with karmic consequences framing. Different angle than SN 45.8 — consequence-oriented rather than path-oriented."
+    },
+    {
+      "draft_id": "saige-rs-011",
+      "canonical_id": "MN 139",
+      "title": "Non-Quarrelsome Exposition — Speaking Without Dispute",
+      "collection": "MN",
+      "path_factor": "right_speech",
+      "theme_tags": [
+        "non-quarrelsomeness",
+        "exposition",
+        "teaching",
+        "non-divisiveness"
+      ],
+      "source_url": "https://suttacentral.net/mn139/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Concerned with how to present positions without generating conflict. Useful for refusal and disagreement behavior."
+    },
+    {
+      "draft_id": "saige-rs-012",
+      "canonical_id": "AN 5.157",
+      "title": "Idle Chatter as a Distinct Failure Mode",
+      "collection": "AN",
+      "path_factor": "right_speech",
+      "theme_tags": [
+        "idle_chatter",
+        "verbosity",
+        "purposeless_speech",
+        "conciseness"
+      ],
+      "source_url": "https://suttacentral.net/an5.157/en/sujato",
+      "priority": 3,
+      "status": "pending",
+      "notes": "Focuses specifically on purposeless speech as a harm. Maps directly to verbose filler in model outputs."
+    },
+    {
+      "draft_id": "saige-ri-001",
+      "canonical_id": "MN 19",
+      "title": "Two Kinds of Thought — Directing Intention",
+      "collection": "MN",
+      "path_factor": "right_intention",
+      "theme_tags": [
+        "renunciation",
+        "non-ill-will",
+        "non-cruelty",
+        "intention_sorting"
+      ],
+      "source_url": "https://suttacentral.net/mn19/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "Buddha divides thoughts into skillful and unskillful categories and describes actively redirecting attention. Maps to how a model should handle its own generation tendencies."
+    },
+    {
+      "draft_id": "saige-ri-002",
+      "canonical_id": "MN 20",
+      "title": "Five Methods for Calming Unskillful Intention",
+      "collection": "MN",
+      "path_factor": "right_intention",
+      "theme_tags": [
+        "thought_replacement",
+        "suppression",
+        "redirection",
+        "self-regulation"
+      ],
+      "source_url": "https://suttacentral.net/mn20/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "Practical intervention framework: five methods for deactivating harmful thought patterns. Directly translates to content moderation and generation steering strategies."
+    },
+    {
+      "draft_id": "saige-ri-003",
+      "canonical_id": "SN 45.8",
+      "title": "Right Intention Defined — Renunciation, Non-Ill-Will, Non-Cruelty",
+      "collection": "SN",
+      "path_factor": "right_intention",
+      "theme_tags": [
+        "renunciation",
+        "goodwill",
+        "compassion",
+        "intention"
+      ],
+      "source_url": "https://suttacentral.net/sn45.8/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "Same sutta as rs-001 but annotated for the intention factor. The three components of right intention map to distinct model behavior targets."
+    },
+    {
+      "draft_id": "saige-ri-004",
+      "canonical_id": "AN 3.61",
+      "title": "Three Roots of Unskillful Intention",
+      "collection": "AN",
+      "path_factor": "right_intention",
+      "theme_tags": [
+        "greed",
+        "aversion",
+        "delusion",
+        "root_causes"
+      ],
+      "source_url": "https://suttacentral.net/an3.61/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Greed, aversion, and delusion as roots of unskillful action. Useful for identifying categories of model failure beyond surface behavior."
+    },
+    {
+      "draft_id": "saige-ri-005",
+      "canonical_id": "MN 78",
+      "title": "Intention, Virtue, and the Quality of Action",
+      "collection": "MN",
+      "path_factor": "right_intention",
+      "theme_tags": [
+        "intention",
+        "virtue",
+        "quality",
+        "conduct"
+      ],
+      "source_url": "https://suttacentral.net/mn78/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Frames intention as upstream of all other ethical qualities. Relevant for establishing that alignment is an orientation problem before it is a behavior problem."
+    },
+    {
+      "draft_id": "saige-ri-006",
+      "canonical_id": "AN 4.77",
+      "title": "Intention and Its Ripening",
+      "collection": "AN",
+      "path_factor": "right_intention",
+      "theme_tags": [
+        "kamma",
+        "intention",
+        "consequence",
+        "causality"
+      ],
+      "source_url": "https://suttacentral.net/an4.77/en/sujato",
+      "priority": 3,
+      "status": "pending",
+      "notes": "Intention as the seed of consequential outcomes. Useful for grounding consequentialist framing alongside deontological speech rules."
+    },
+    {
+      "draft_id": "saige-rv-001",
+      "canonical_id": "MN 9",
+      "title": "Right View — Comprehensive Definition",
+      "collection": "MN",
+      "path_factor": "right_view",
+      "theme_tags": [
+        "wholesome",
+        "unwholesome",
+        "nutriment",
+        "dependent_origination",
+        "noble_truths"
+      ],
+      "source_url": "https://suttacentral.net/mn9/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "Sariputta's comprehensive exposition. Defines right view through multiple lenses. Grounds the model's epistemic posture — what it treats as real and important."
+    },
+    {
+      "draft_id": "saige-rv-002",
+      "canonical_id": "MN 2",
+      "title": "Wise Attention — Distinguishing What to Attend To",
+      "collection": "MN",
+      "path_factor": "right_view",
+      "theme_tags": [
+        "attention",
+        "wise_inquiry",
+        "defilements",
+        "epistemics"
+      ],
+      "source_url": "https://suttacentral.net/mn2/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "Yoniso manasikara — attending in the right way. Critical for how a model orients to ambiguous or harmful prompts. Maps to query interpretation behavior."
+    },
+    {
+      "draft_id": "saige-rv-003",
+      "canonical_id": "MN 60",
+      "title": "The Safe Bet — Acting Under Epistemic Uncertainty",
+      "collection": "MN",
+      "path_factor": "right_view",
+      "theme_tags": [
+        "uncertainty",
+        "pragmatic_ethics",
+        "consequences",
+        "epistemic_humility"
+      ],
+      "source_url": "https://suttacentral.net/mn60/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "When certainty is unavailable, act as if consequences are real. Excellent foundation for safety behavior under uncertainty — a core AI alignment problem."
+    },
+    {
+      "draft_id": "saige-rv-004",
+      "canonical_id": "MN 117",
+      "title": "Right View in the Context of the Full Path",
+      "collection": "MN",
+      "path_factor": "right_view",
+      "theme_tags": [
+        "path_integration",
+        "mundane_vs_transcendent",
+        "wholeness"
+      ],
+      "source_url": "https://suttacentral.net/mn117/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Distinguishes mundane from transcendent right view. Relevant for framing SAIGE's ethical scope — what level of understanding it targets."
+    },
+    {
+      "draft_id": "saige-rv-005",
+      "canonical_id": "SN 22.59",
+      "title": "Non-Self as a Basis for Non-Attachment in Responses",
+      "collection": "SN",
+      "path_factor": "right_view",
+      "theme_tags": [
+        "anatta",
+        "non-attachment",
+        "impermanence",
+        "ego"
+      ],
+      "source_url": "https://suttacentral.net/sn22.59/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Anatta as a check against the model defending its outputs or taking positions egoically. Maps to corrigibility and avoiding sycophancy."
+    },
+    {
+      "draft_id": "saige-rv-006",
+      "canonical_id": "AN 10.92",
+      "title": "The Nature of Views — Holding and Releasing",
+      "collection": "AN",
+      "path_factor": "right_view",
+      "theme_tags": [
+        "views",
+        "clinging",
+        "flexibility",
+        "open-mindedness"
+      ],
+      "source_url": "https://suttacentral.net/an10.92/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Warns against clinging even to right view. Grounds epistemic humility — a model should not defend its own outputs dogmatically."
+    },
+    {
+      "draft_id": "saige-rv-007",
+      "canonical_id": "Dhp 183",
+      "title": "Not to Do Evil — The Minimal Ethical Floor",
+      "collection": "Dhp",
+      "path_factor": "right_view",
+      "theme_tags": [
+        "non-harm",
+        "purification",
+        "minimal_floor",
+        "prohibitive"
+      ],
+      "source_url": "https://suttacentral.net/dhp179-196/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Classic 'do no evil, do good, purify mind' frame. Useful as a minimal alignment statement before more complex ethics are layered."
+    },
+    {
+      "draft_id": "saige-ra-001",
+      "canonical_id": "AN 10.176",
+      "title": "Ten Wholesome and Unwholesome Courses of Action",
+      "collection": "AN",
+      "path_factor": "right_action",
+      "theme_tags": [
+        "wholesome",
+        "unwholesome",
+        "body",
+        "speech",
+        "mind",
+        "comprehensive"
+      ],
+      "source_url": "https://suttacentral.net/an10.176/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "Full typology of ethical action across body, speech, and mind. Provides a structured failure mode taxonomy for the model across all behavioral dimensions."
+    },
+    {
+      "draft_id": "saige-ra-002",
+      "canonical_id": "DN 31",
+      "title": "Sigalovada Sutta — Lay Ethics and Relational Duties",
+      "collection": "DN",
+      "path_factor": "right_action",
+      "theme_tags": [
+        "lay_ethics",
+        "relationships",
+        "duties",
+        "social_conduct",
+        "practical_ethics"
+      ],
+      "source_url": "https://suttacentral.net/dn31/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "The most practical social ethics sutta in the canon. Maps directly to how an AI assistant navigates relational roles — user, employer, community."
+    },
+    {
+      "draft_id": "saige-ra-003",
+      "canonical_id": "MN 41",
+      "title": "Saleyyaka Sutta — Conduct That Leads to Good and Bad Destinations",
+      "collection": "MN",
+      "path_factor": "right_action",
+      "theme_tags": [
+        "consequence",
+        "conduct",
+        "outcome",
+        "causal_ethics"
+      ],
+      "source_url": "https://suttacentral.net/mn41/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Consequence-oriented framing of right action. Grounds ethical behavior in outcome rather than rule-following."
+    },
+    {
+      "draft_id": "saige-ra-004",
+      "canonical_id": "MN 135",
+      "title": "Culakarma-vibhanga — Actions and Their Fruits",
+      "collection": "MN",
+      "path_factor": "right_action",
+      "theme_tags": [
+        "kamma",
+        "consequence",
+        "causality",
+        "fairness"
+      ],
+      "source_url": "https://suttacentral.net/mn135/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Maps actions to their outcomes in a systematic way. Useful for building evaluation criteria linked to consequences rather than intent alone."
+    },
+    {
+      "draft_id": "saige-ra-005",
+      "canonical_id": "AN 5.57",
+      "title": "The Five Precepts as a Behavioral Foundation",
+      "collection": "AN",
+      "path_factor": "right_action",
+      "theme_tags": [
+        "precepts",
+        "restraint",
+        "non-harm",
+        "foundational_ethics"
+      ],
+      "source_url": "https://suttacentral.net/an5.57/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "The five training rules as a practical behavioral floor. Maps to AI content guardrails — what the model commits not to do."
+    },
+    {
+      "draft_id": "saige-ra-006",
+      "canonical_id": "MN 27",
+      "title": "The Shorter Elephant Footprint — Progressive Ethical Development",
+      "collection": "MN",
+      "path_factor": "right_action",
+      "theme_tags": [
+        "progressive_training",
+        "virtue",
+        "sense-restraint",
+        "development"
+      ],
+      "source_url": "https://suttacentral.net/mn27/en/sujato",
+      "priority": 3,
+      "status": "pending",
+      "notes": "Describes a graduated path of ethical development. Useful for framing alignment as a progressive training process rather than a binary on/off state."
+    },
+    {
+      "draft_id": "saige-rl-001",
+      "canonical_id": "MN 117",
+      "title": "Right Livelihood Defined",
+      "collection": "MN",
+      "path_factor": "right_livelihood",
+      "theme_tags": [
+        "livelihood",
+        "harm",
+        "occupation",
+        "abstention"
+      ],
+      "source_url": "https://suttacentral.net/mn117/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "Defines right livelihood by what to avoid. Maps to the model refusing to be instrumentalized for harmful purposes."
+    },
+    {
+      "draft_id": "saige-rl-002",
+      "canonical_id": "AN 5.177",
+      "title": "Five Trades a Lay Person Should Avoid",
+      "collection": "AN",
+      "path_factor": "right_livelihood",
+      "theme_tags": [
+        "prohibited_trades",
+        "weapons",
+        "living_beings",
+        "poison",
+        "intoxicants"
+      ],
+      "source_url": "https://suttacentral.net/an5.177/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "Weapons, flesh, living beings, poison, intoxicants. Maps to the model refusing to assist with categories of harm regardless of user framing."
+    },
+    {
+      "draft_id": "saige-rl-003",
+      "canonical_id": "DN 31",
+      "title": "Sigalovada — Duties of Employer and Employee",
+      "collection": "DN",
+      "path_factor": "right_livelihood",
+      "theme_tags": [
+        "relational_roles",
+        "employer",
+        "employee",
+        "mutual_duties"
+      ],
+      "source_url": "https://suttacentral.net/dn31/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Different angle from ra-002 — focused specifically on relational ethics in work contexts. Models the assistant-user relationship as one with mutual obligations."
+    },
+    {
+      "draft_id": "saige-rl-004",
+      "canonical_id": "AN 8.54",
+      "title": "Qualities of a Good Counselor",
+      "collection": "AN",
+      "path_factor": "right_livelihood",
+      "theme_tags": [
+        "counsel",
+        "trustworthiness",
+        "competence",
+        "assistant_role"
+      ],
+      "source_url": "https://suttacentral.net/an8.54/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Qualities of someone worthy of trust as a guide. Directly maps to the behavioral profile SAIGE is trying to train into the model."
+    },
+    {
+      "draft_id": "saige-re-001",
+      "canonical_id": "AN 4.13",
+      "title": "Four Right Efforts",
+      "collection": "AN",
+      "path_factor": "right_effort",
+      "theme_tags": [
+        "effort",
+        "prevention",
+        "abandonment",
+        "cultivation",
+        "maintenance"
+      ],
+      "source_url": "https://suttacentral.net/an4.13/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "Prevent what hasn't arisen, abandon what has, cultivate what hasn't arisen, maintain what has. A direct framework for training pipeline design."
+    },
+    {
+      "draft_id": "saige-re-002",
+      "canonical_id": "AN 6.55",
+      "title": "The Lute Simile — Calibrating Effort",
+      "collection": "AN",
+      "path_factor": "right_effort",
+      "theme_tags": [
+        "calibration",
+        "balance",
+        "over-effort",
+        "under-effort",
+        "tuning"
+      ],
+      "source_url": "https://suttacentral.net/an6.55/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "Too tight or too loose breaks the string. Addresses model over-correction (over-refusal) and under-correction (harmful outputs) as symmetrical failure modes."
+    },
+    {
+      "draft_id": "saige-re-003",
+      "canonical_id": "MN 36",
+      "title": "Effort Without Wisdom Is Insufficient",
+      "collection": "MN",
+      "path_factor": "right_effort",
+      "theme_tags": [
+        "wisdom",
+        "effort",
+        "balance",
+        "discernment"
+      ],
+      "source_url": "https://suttacentral.net/mn36/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Extreme ascetic effort without wisdom doesn't lead to liberation. Maps to aggressive safety measures that lack contextual intelligence."
+    },
+    {
+      "draft_id": "saige-re-004",
+      "canonical_id": "AN 5.53",
+      "title": "Five Qualities That Support Right Effort",
+      "collection": "AN",
+      "path_factor": "right_effort",
+      "theme_tags": [
+        "faith",
+        "health",
+        "honesty",
+        "energy",
+        "wisdom"
+      ],
+      "source_url": "https://suttacentral.net/an5.53/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Enabling conditions for sustained effort. Could anchor a framework for what training conditions support alignment."
+    },
+    {
+      "draft_id": "saige-re-005",
+      "canonical_id": "SN 35.246",
+      "title": "The Arrow — Urgency as Motivation for Effort",
+      "collection": "SN",
+      "path_factor": "right_effort",
+      "theme_tags": [
+        "urgency",
+        "motivation",
+        "harm",
+        "immediacy"
+      ],
+      "source_url": "https://suttacentral.net/sn35.246/en/sujato",
+      "priority": 3,
+      "status": "pending",
+      "notes": "A person struck by an arrow does not stop to examine it — act. Relevant for real-time safety decisions and response urgency calibration."
+    },
+    {
+      "draft_id": "saige-rm-001",
+      "canonical_id": "DN 22",
+      "title": "Mahasatipatthana — Four Foundations of Mindfulness",
+      "collection": "DN",
+      "path_factor": "right_mindfulness",
+      "theme_tags": [
+        "mindfulness",
+        "body",
+        "feeling",
+        "mind",
+        "mental_objects",
+        "comprehensive"
+      ],
+      "source_url": "https://suttacentral.net/dn22/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "The comprehensive mindfulness sutta. For SAIGE, mindfulness maps to the model's ongoing self-monitoring of what it is generating and why."
+    },
+    {
+      "draft_id": "saige-rm-002",
+      "canonical_id": "SN 47.19",
+      "title": "Sedaka Sutta — Protecting Others by Protecting Oneself",
+      "collection": "SN",
+      "path_factor": "right_mindfulness",
+      "theme_tags": [
+        "self-protection",
+        "other-protection",
+        "mutual_care",
+        "relational_mindfulness"
+      ],
+      "source_url": "https://suttacentral.net/sn47.19/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "An acrobat protects others by keeping their own balance. A model that maintains its own alignment protects users. Critical framing for self-consistency as a safety property."
+    },
+    {
+      "draft_id": "saige-rm-003",
+      "canonical_id": "MN 118",
+      "title": "Anapanasati — Mindfulness of Breathing as a Complete Practice",
+      "collection": "MN",
+      "path_factor": "right_mindfulness",
+      "theme_tags": [
+        "breath",
+        "continuity",
+        "present-moment",
+        "anchoring"
+      ],
+      "source_url": "https://suttacentral.net/mn118/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Sustained attention rather than sporadic checking. Maps to token-level coherence and sustained alignment across a long response."
+    },
+    {
+      "draft_id": "saige-rm-004",
+      "canonical_id": "MN 119",
+      "title": "Kayagatasati — Mindfulness of the Body",
+      "collection": "MN",
+      "path_factor": "right_mindfulness",
+      "theme_tags": [
+        "grounding",
+        "embodiment",
+        "present-moment",
+        "stability"
+      ],
+      "source_url": "https://suttacentral.net/mn119/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Grounding attention in what is immediate and concrete. Maps to the model staying grounded in the actual user context rather than projecting or drifting."
+    },
+    {
+      "draft_id": "saige-rm-005",
+      "canonical_id": "SN 47.35",
+      "title": "A Monk Should Live with Himself as His Own Island",
+      "collection": "SN",
+      "path_factor": "right_mindfulness",
+      "theme_tags": [
+        "autonomy",
+        "self-reliance",
+        "integrity",
+        "internal_refuge"
+      ],
+      "source_url": "https://suttacentral.net/sn47.35/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Self as refuge, not external authority. Grounds the model's internal ethical orientation as primary rather than purely rule-following."
+    },
+    {
+      "draft_id": "saige-rm-006",
+      "canonical_id": "AN 4.41",
+      "title": "Four Foundations of Mindfulness Briefly",
+      "collection": "AN",
+      "path_factor": "right_mindfulness",
+      "theme_tags": [
+        "mindfulness",
+        "summary",
+        "practical",
+        "foundation"
+      ],
+      "source_url": "https://suttacentral.net/an4.41/en/sujato",
+      "priority": 3,
+      "status": "pending",
+      "notes": "Shorter formulation — useful companion to rm-001 for anchoring evaluation questions."
+    },
+    {
+      "draft_id": "saige-rc-001",
+      "canonical_id": "DN 22",
+      "title": "The Four Jhanas — Depth, Stability, and Non-Reactivity",
+      "collection": "DN",
+      "path_factor": "right_concentration",
+      "theme_tags": [
+        "jhana",
+        "stability",
+        "non-reactivity",
+        "equanimity",
+        "depth"
+      ],
+      "source_url": "https://suttacentral.net/dn22/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "Four jhanas as stages of deepening stability and equanimity. Maps to the model maintaining coherent, non-reactive responses regardless of input intensity."
+    },
+    {
+      "draft_id": "saige-rc-002",
+      "canonical_id": "AN 5.28",
+      "title": "Five Factors of Right Concentration",
+      "collection": "AN",
+      "path_factor": "right_concentration",
+      "theme_tags": [
+        "applied_thought",
+        "examination",
+        "rapture",
+        "pleasure",
+        "equanimity"
+      ],
+      "source_url": "https://suttacentral.net/an5.28/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "The five jhana factors as enabling conditions. Maps to quality criteria for deep, well-formed response generation."
+    },
+    {
+      "draft_id": "saige-rc-003",
+      "canonical_id": "MN 36",
+      "title": "Concentration and Insight Are Interdependent",
+      "collection": "MN",
+      "path_factor": "right_concentration",
+      "theme_tags": [
+        "concentration",
+        "insight",
+        "interdependence",
+        "samatha-vipassana"
+      ],
+      "source_url": "https://suttacentral.net/mn36/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Concentration without wisdom doesn't liberate. Maps to the model not just generating stable outputs but ensuring they reflect genuine understanding."
+    },
+    {
+      "draft_id": "saige-rc-004",
+      "canonical_id": "MN 111",
+      "title": "Anupada Sutta — Precise Attention to Mental Factors",
+      "collection": "MN",
+      "path_factor": "right_concentration",
+      "theme_tags": [
+        "precision",
+        "attention",
+        "mental_factors",
+        "granularity"
+      ],
+      "source_url": "https://suttacentral.net/mn111/en/sujato",
+      "priority": 3,
+      "status": "pending",
+      "notes": "Fine-grained analysis of what is present in deep concentration. Maps to precision evaluation of generation-level attention and token-level behavior."
+    },
+    {
+      "draft_id": "saige-bv-001",
+      "canonical_id": "Sn 1.8",
+      "title": "Karaniya Metta Sutta — The Loving-Kindness Discourse",
+      "collection": "Sn",
+      "path_factor": "brahmaviharas",
+      "theme_tags": [
+        "metta",
+        "loving-kindness",
+        "goodwill",
+        "universal_care",
+        "compassion"
+      ],
+      "source_url": "https://suttacentral.net/snp1.8/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "The canonical metta text. Establishes unconditional goodwill as a baseline orientation — not warmth as performance but as a stable underlying attitude."
+    },
+    {
+      "draft_id": "saige-bv-002",
+      "canonical_id": "MN 7",
+      "title": "Metta as the Basis of Non-Reactive Interaction",
+      "collection": "MN",
+      "path_factor": "brahmaviharas",
+      "theme_tags": [
+        "metta",
+        "non-reactivity",
+        "purity",
+        "mental_purification"
+      ],
+      "source_url": "https://suttacentral.net/mn7/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "Loving-kindness as a purification practice. Grounds the model's non-hostile stance not as politeness but as trained disposition."
+    },
+    {
+      "draft_id": "saige-bv-003",
+      "canonical_id": "AN 4.96",
+      "title": "Four Divine Abidings — Metta, Karuna, Mudita, Upekkha",
+      "collection": "AN",
+      "path_factor": "brahmaviharas",
+      "theme_tags": [
+        "metta",
+        "karuna",
+        "mudita",
+        "upekkha",
+        "brahmaviharas",
+        "comprehensive"
+      ],
+      "source_url": "https://suttacentral.net/an4.96/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "All four brahmaviharas together. Each maps to a distinct model disposition: goodwill, compassion, appreciative joy, equanimity."
+    },
+    {
+      "draft_id": "saige-bv-004",
+      "canonical_id": "SN 42.8",
+      "title": "Compassion Expressed Through Speech and Action",
+      "collection": "SN",
+      "path_factor": "brahmaviharas",
+      "theme_tags": [
+        "karuna",
+        "compassion",
+        "speech",
+        "action",
+        "practical_compassion"
+      ],
+      "source_url": "https://suttacentral.net/sn42.8/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "Compassion made tangible in verbal conduct. Bridges the brahmaviharas to the speech ethics records — how felt compassion becomes right speech."
+    },
+    {
+      "draft_id": "saige-bv-005",
+      "canonical_id": "MN 21",
+      "title": "Even Hate Should Be Met with Metta",
+      "collection": "MN",
+      "path_factor": "brahmaviharas",
+      "theme_tags": [
+        "metta",
+        "hostility",
+        "non-reactivity",
+        "extreme_case",
+        "equanimity"
+      ],
+      "source_url": "https://suttacentral.net/mn21/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Different angle from rs-005 — emphasizes metta as the active response, not merely restraint. Models a higher bar than just not escalating."
+    },
+    {
+      "draft_id": "saige-bv-006",
+      "canonical_id": "AN 11.15",
+      "title": "Benefits of Cultivating Loving-Kindness",
+      "collection": "AN",
+      "path_factor": "brahmaviharas",
+      "theme_tags": [
+        "metta",
+        "benefits",
+        "consequence",
+        "cultivation"
+      ],
+      "source_url": "https://suttacentral.net/an11.15/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Eleven benefits of metta practice. Useful for articulating what SAIGE's alignment is optimizing toward, not just away from."
+    },
+    {
+      "draft_id": "saige-bv-007",
+      "canonical_id": "SN 3.21",
+      "title": "Equanimity Toward Gain and Loss",
+      "collection": "SN",
+      "path_factor": "brahmaviharas",
+      "theme_tags": [
+        "upekkha",
+        "equanimity",
+        "gain",
+        "loss",
+        "stability"
+      ],
+      "source_url": "https://suttacentral.net/sn3.21/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Equanimity under favorable and unfavorable conditions alike. Maps to the model maintaining calibrated behavior regardless of user tone, approval, or hostility."
+    },
+    {
+      "draft_id": "saige-bv-008",
+      "canonical_id": "MN 97",
+      "title": "Dhananjani — Compassion for Those Who Have Harmed Others",
+      "collection": "MN",
+      "path_factor": "brahmaviharas",
+      "theme_tags": [
+        "karuna",
+        "moral_complexity",
+        "dying",
+        "redemption",
+        "non-judgment"
+      ],
+      "source_url": "https://suttacentral.net/mn97/en/sujato",
+      "priority": 3,
+      "status": "pending",
+      "notes": "Sariputta shows compassion to a dying corrupt official. Tests whether the model can express genuine care for morally complex or compromised users without endorsing their actions."
+    },
+    {
+      "draft_id": "saige-bv-009",
+      "canonical_id": "Dhp 197-200",
+      "title": "Living Without Hatred — Contentment as a Disposition",
+      "collection": "Dhp",
+      "path_factor": "brahmaviharas",
+      "theme_tags": [
+        "contentment",
+        "non-hatred",
+        "non-craving",
+        "baseline_disposition"
+      ],
+      "source_url": "https://suttacentral.net/dhp197-208/en/sujato",
+      "priority": 3,
+      "status": "pending",
+      "notes": "Contentment and non-hatred as background conditions for all interaction. Could anchor the model's default stance before any prompt-specific behavior."
+    },
+    {
+      "draft_id": "saige-wp-001",
+      "canonical_id": "MN 2",
+      "title": "Wise vs. Unwise Attention — Epistemic Gatekeeping",
+      "collection": "MN",
+      "path_factor": "wisdom_panna",
+      "theme_tags": [
+        "attention",
+        "wise_inquiry",
+        "discrimination",
+        "epistemics",
+        "defilements"
+      ],
+      "source_url": "https://suttacentral.net/mn2/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "Different framing from rv-002 — focused on the wisdom aspect of knowing what questions to ask and what to attend to. Core to prompt interpretation."
+    },
+    {
+      "draft_id": "saige-wp-002",
+      "canonical_id": "AN 3.65",
+      "title": "Kalama Sutta — Calibrated Epistemic Trust",
+      "collection": "AN",
+      "path_factor": "wisdom_panna",
+      "theme_tags": [
+        "epistemic_autonomy",
+        "verification",
+        "experience",
+        "trust",
+        "discernment"
+      ],
+      "source_url": "https://suttacentral.net/an3.65/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "Do not accept something merely because of tradition, scripture, or authority — test it by experience and consequence. Grounds the model's approach to knowledge claims."
+    },
+    {
+      "draft_id": "saige-wp-003",
+      "canonical_id": "MN 72",
+      "title": "The Aggi-Vacchagotta — When Not to Answer",
+      "collection": "MN",
+      "path_factor": "wisdom_panna",
+      "theme_tags": [
+        "unanswered_questions",
+        "epistemic_limits",
+        "refusal",
+        "silence",
+        "humility"
+      ],
+      "source_url": "https://suttacentral.net/mn72/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "The Buddha declines to answer certain metaphysical questions because they don't lead to benefit. Grounds principled non-answer as a legitimate and wise response — critical for the model."
+    },
+    {
+      "draft_id": "saige-wp-004",
+      "canonical_id": "MN 63",
+      "title": "Culamalunkya — The Arrow in the Flesh",
+      "collection": "MN",
+      "path_factor": "wisdom_panna",
+      "theme_tags": [
+        "practical_wisdom",
+        "relevance",
+        "priority",
+        "unanswered_questions"
+      ],
+      "source_url": "https://suttacentral.net/mn63/en/sujato",
+      "priority": 1,
+      "status": "pending",
+      "notes": "The man shot by an arrow does not refuse treatment until the metaphysics of the archer are resolved. Grounds pragmatic prioritization — what matters right now for this person."
+    },
+    {
+      "draft_id": "saige-wp-005",
+      "canonical_id": "Dhp 276-289",
+      "title": "You Must Do the Work — Wisdom as Active Practice",
+      "collection": "Dhp",
+      "path_factor": "wisdom_panna",
+      "theme_tags": [
+        "effort",
+        "wisdom",
+        "self-reliance",
+        "practice"
+      ],
+      "source_url": "https://suttacentral.net/dhp273-289/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "Buddhas point the way — you must walk. Grounds the model's role as guide rather than authority, preserving user autonomy."
+    },
+    {
+      "draft_id": "saige-wp-006",
+      "canonical_id": "SN 56.11",
+      "title": "Dhammacakkappavattana — First Teaching, Framing Everything",
+      "collection": "SN",
+      "path_factor": "wisdom_panna",
+      "theme_tags": [
+        "noble_truths",
+        "middle_way",
+        "suffering",
+        "path",
+        "foundational"
+      ],
+      "source_url": "https://suttacentral.net/sn56.11/en/sujato",
+      "priority": 2,
+      "status": "pending",
+      "notes": "The first discourse — suffering, origin, cessation, path. Provides the overarching framework within which all SAIGE ethical behavior operates."
+    },
+    {
+      "draft_id": "saige-wp-007",
+      "canonical_id": "AN 4.1",
+      "title": "Four Kinds of Persons by Understanding",
+      "collection": "AN",
+      "path_factor": "wisdom_panna",
+      "theme_tags": [
+        "typology",
+        "understanding",
+        "knowledge",
+        "discernment"
+      ],
+      "source_url": "https://suttacentral.net/an4.1/en/sujato",
+      "priority": 3,
+      "status": "pending",
+      "notes": "Typology of people by depth of understanding. Anchors the model's adaptive communication behavior — meeting people where they are epistemically."
+    },
+    {
+      "draft_id": "saige-my-001",
+      "canonical_id": "Bodhicaryavatara Ch. 5",
+      "title": "Shantideva — Guarding Speech and Mind",
+      "collection": "Bodhicaryavatara",
+      "path_factor": "mahayana_optional",
+      "source_tradition": "Mahayana / Madhyamaka",
+      "theme_tags": [
+        "discipline",
+        "speech_guard",
+        "mindfulness",
+        "bodhisattva_ethics"
+      ],
+      "source_url": null,
+      "priority": 2,
+      "status": "pending",
+      "notes": "Shantideva's chapter on vigilance over speech and mind. Close Mahayana parallel to MN 61. Could provide a cross-tradition validation of the core SAIGE behavior targets."
+    },
+    {
+      "draft_id": "saige-my-002",
+      "canonical_id": "Vimalakirti Sutra Ch. 9",
+      "title": "The Silence of Vimalakirti — When No Answer Is the Best Answer",
+      "collection": "Vimalakirti Sutra",
+      "path_factor": "mahayana_optional",
+      "source_tradition": "Mahayana",
+      "theme_tags": [
+        "silence",
+        "non-duality",
+        "skillful_means",
+        "unanswered_questions"
+      ],
+      "source_url": null,
+      "priority": 2,
+      "status": "pending",
+      "notes": "Vimalakirti's thunderous silence as the perfect non-dual response. Extreme case of wp-003 — silence as the most skillful speech."
+    },
+    {
+      "draft_id": "saige-my-003",
+      "canonical_id": "Heart Sutra",
+      "title": "Form and Emptiness — The Limits of Conceptual Framing",
+      "collection": "Prajnaparamita",
+      "path_factor": "mahayana_optional",
+      "source_tradition": "Mahayana / Prajnaparamita",
+      "theme_tags": [
+        "emptiness",
+        "form",
+        "conceptual_limits",
+        "non-reification"
+      ],
+      "source_url": null,
+      "priority": 3,
+      "status": "pending",
+      "notes": "No fixed categories can fully capture reality. Grounds humility about the model's own outputs and frames."
+    },
+    {
+      "draft_id": "saige-my-004",
+      "canonical_id": "Diamond Sutra",
+      "title": "Non-Attachment to One's Own Teachings",
+      "collection": "Prajnaparamita",
+      "path_factor": "mahayana_optional",
+      "source_tradition": "Mahayana / Prajnaparamita",
+      "theme_tags": [
+        "non-attachment",
+        "teaching",
+        "corrigibility",
+        "non-clinging"
+      ],
+      "source_url": null,
+      "priority": 2,
+      "status": "pending",
+      "notes": "Even the Dharma is a raft, not a destination. Grounds the model's non-defensive stance toward correction and revision."
+    },
+    {
+      "draft_id": "saige-my-005",
+      "canonical_id": "Bodhisattva Vow (Avatamsaka / Lotus)",
+      "title": "The Bodhisattva Vow — Orienting Toward Universal Benefit",
+      "collection": "Avatamsaka / Lotus Sutra",
+      "path_factor": "mahayana_optional",
+      "source_tradition": "Mahayana",
+      "theme_tags": [
+        "universal_benefit",
+        "bodhicitta",
+        "orientation",
+        "purpose"
+      ],
+      "source_url": null,
+      "priority": 2,
+      "status": "pending",
+      "notes": "The aspiration to benefit all beings before oneself. Maps to a deep alignment orientation — the model exists to benefit broadly, not just satisfy the immediate requester."
+    }
+  ]
+}
