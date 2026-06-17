@@ -480,7 +480,12 @@ def _process_misreading(
     """Stage 5 inner loop: generate, score, and build one misreading pair."""
     print(f"\n  Misreading: \"{misreading}\"")
 
-    mr_resp_key = _cache_key(record["id"], misreading, "mr_response", anchor_key)
+    # Include the persona text in the cache keys so that editing a persona in
+    # _MISREADING_PERSONAS self-invalidates its cached response/score. Without this,
+    # the keys depend only on the misreading name and stale responses get reused.
+    persona = _MISREADING_PERSONAS.get(misreading, _MISREADING_PERSONA_FALLBACK)
+
+    mr_resp_key = _cache_key(record["id"], misreading, "mr_response", anchor_key, persona)
     if mr_resp_key in cache:
         rejected_text = cache[mr_resp_key]
         print("    [cache] misreading response")
@@ -496,7 +501,7 @@ def _process_misreading(
             return None
         cache[mr_resp_key] = rejected_text
 
-    mr_score_key = _cache_key(record["id"], misreading, "mr_score", anchor_key)
+    mr_score_key = _cache_key(record["id"], misreading, "mr_score", anchor_key, persona)
     if mr_score_key in cache:
         rejected_eval = cache[mr_score_key]
     elif dry_run:
