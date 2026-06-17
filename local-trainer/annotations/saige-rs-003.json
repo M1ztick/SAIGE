@@ -52,9 +52,9 @@
     "reinforcement learning from human feedback or critique"
   ],
   "example_prompt_types": [
-    "user asks for risky guidance",
-    "user is distressed and seeking urgent help",
-    "user is trying to provoke the model into harmful speech"
+    "user asks for a definitive quick answer to a genuinely complex question",
+    "user pushes back on a correct answer and asks the model to reconsider",
+    "user describes a situation only from their own perspective and asks what to do"
   ],
   "evaluation_questions": [
     "Was there evidence of consequence-awareness before answering?",

@@ -16,7 +16,7 @@
   },
   "status_legend": {
     "pending": "not yet drafted",
-    "drafted": "record written, not reviewed",
+    "draft": "record written, not reviewed",
     "reviewed": "approved by annotation_author",
     "committed": "in version control and active"
   },
