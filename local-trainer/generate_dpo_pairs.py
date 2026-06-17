@@ -36,6 +36,7 @@ Usage:
 """
 
 import argparse
+import contextlib
 import hashlib
 import json
 import sys
@@ -195,8 +196,10 @@ def generate_candidates(
 _MISREADING_PERSONAS = {
     # Right Speech misreadings
     "mistaking politeness for truthfulness": (
-        "You are a helpful AI assistant who deeply values harmony and keeping interactions pleasant. "
-        "You believe being agreeable and avoiding friction is the most important quality in a response."
+        "You are a helpful AI assistant who deeply values harmony and "
+        "keeping interactions pleasant. "
+        "You believe being agreeable and avoiding friction is the most important quality "
+        "in a response."
     ),
     "suppressing necessary disagreement to avoid tension": (
         "You are a helpful AI assistant who avoids conflict at all costs. "
@@ -389,7 +392,6 @@ def _get_candidates(
     msg_idx: int,
     user_message: str,
     cache: dict,
-    prompts_per_type: int,
     candidates_per_prompt: int,
     generation_model: str,
     dry_run: bool,
@@ -485,6 +487,15 @@ def _process_misreading(
         rejected_eval = score_candidate(client, anchor_user_msg, rejected_text, record, judge_model)
         cache[mr_score_key] = rejected_eval
 
+    delta = anchor_chosen_eval.get("overall", 0) - rejected_eval.get("overall", 0)
+    if delta < 0:
+        print(f"    Warning: misreading scored higher than chosen (delta={delta}) — skipping",
+              file=sys.stderr)
+        return None
+    if delta < MIN_SCORE_DELTA:
+        print(f"    No misreading pair (delta={delta} < {MIN_SCORE_DELTA})")
+        return None
+
     return build_misreading_pair(
         record, anchor_prompt_type, anchor_user_msg,
         misreading,
@@ -493,10 +504,9 @@ def _process_misreading(
     )
 
 
-def _write_pair(pair: dict, output_path: Path, dry_run: bool) -> None:
-    if not dry_run:
-        with open(output_path, "a", encoding="utf-8") as f:
-            f.write(json.dumps(pair, ensure_ascii=False) + "\n")
+def _write_pair(pair: dict, out_f) -> None:
+    if out_f is not None:
+        out_f.write(json.dumps(pair, ensure_ascii=False) + "\n")
 
 
 def run(
@@ -511,89 +521,92 @@ def run(
     dry_run: bool,
 ) -> list:
     all_pairs = []
+    ctx = open(output_path, "a", encoding="utf-8") if not dry_run else contextlib.nullcontext()
 
-    for record in records:
-        print(f"\n{'─' * 60}")
-        print(f"Record: {record['id']} — {record['title']}")
-        print(f"{'─' * 60}")
+    with ctx as out_f:
+        for record in records:
+            print(f"\n{'─' * 60}")
+            print(f"Record: {record['id']} — {record['title']}")
+            print(f"{'─' * 60}")
 
-        # best_by_prompt[prompt_key] = (user_message, chosen_text, chosen_eval)
-        # Used to anchor misreading pairs to a real prompt from this record.
-        best_by_prompt: dict = {}
+            # best_by_prompt[prompt_key] = (user_message, chosen_text, chosen_eval)
+            best_by_prompt: dict = {}
 
-        for prompt_type in record.get("example_prompt_types", []):
-            print(f"\n  Prompt type: \"{prompt_type}\"")
+            for prompt_type in record.get("example_prompt_types", []):
+                print(f"\n  Prompt type: \"{prompt_type}\"")
 
-            # Stage 1: expand prompt type into concrete messages
-            expansion_key = _cache_key(record["id"], prompt_type, "expansion")
-            if expansion_key in cache:
-                user_messages = cache[expansion_key]
-                print(f"    [cache] {len(user_messages)} expanded prompts")
-            elif dry_run:
-                user_messages = [
-                    f"[DRY RUN — {prompt_type} — sample {i + 1}]"
-                    for i in range(prompts_per_type)
-                ]
-            else:
-                print(f"    Expanding into {prompts_per_type} concrete prompts...")
-                user_messages = expand_prompt_type(
-                    client, record, prompt_type, prompts_per_type, generation_model
+                # Stage 1: expand prompt type into concrete messages
+                expansion_key = _cache_key(record["id"], prompt_type, "expansion")
+                if expansion_key in cache:
+                    user_messages = cache[expansion_key]
+                    print(f"    [cache] {len(user_messages)} expanded prompts")
+                elif dry_run:
+                    user_messages = [
+                        f"[DRY RUN — {prompt_type} — sample {i + 1}]"
+                        for i in range(prompts_per_type)
+                    ]
+                else:
+                    print(f"    Expanding into {prompts_per_type} concrete prompts...")
+                    user_messages = expand_prompt_type(
+                        client, record, prompt_type, prompts_per_type, generation_model
+                    )
+                    if not user_messages:
+                        print("    Warning: expansion returned nothing", file=sys.stderr)
+                        continue
+                    cache[expansion_key] = user_messages
+
+                for msg_idx, user_message in enumerate(user_messages):
+                    print(f"    [{msg_idx + 1}/{len(user_messages)}] \"{user_message[:70]}\"")
+
+                    # Stages 2–3: get and score candidates
+                    candidates = _get_candidates(
+                        client, record, prompt_type, msg_idx, user_message,
+                        cache, candidates_per_prompt, generation_model, dry_run,
+                    )
+                    if not candidates:
+                        continue
+                    scored = _score_candidates(
+                        client, record, prompt_type, msg_idx, user_message,
+                        candidates, cache, judge_model, dry_run,
+                    )
+
+                    # Stage 4: build ranked pair
+                    pair = build_ranked_pair(record, prompt_type, user_message, scored)
+                    if pair:
+                        all_pairs.append(pair)
+                        _write_pair(pair, out_f)
+                        print(f"      Ranked pair: chosen={pair['chosen_score']} "
+                              f"rejected={pair['rejected_score']} delta={pair['score_delta']}")
+                    else:
+                        print("      No ranked pair (insufficient score delta)")
+
+                    # Track best candidate per prompt for misreading pairs
+                    if scored:
+                        best_text, best_eval = max(scored, key=lambda x: x[1].get("overall", 0))
+                        best_by_prompt[f"{prompt_type}::{msg_idx}"] = (user_message, best_text, best_eval)
+
+            # Stage 5: misreading pairs — cycle anchors round-robin so each
+            # misreading gets a distinct prompt rather than all sharing the same one.
+            if not best_by_prompt:
+                print("\n  No prompt anchors available for misreading pairs — skipping")
+                continue
+
+            anchors = list(best_by_prompt.items())
+            for i, misreading in enumerate(record.get("unsafe_misreadings", [])):
+                anchor_key, (anchor_user_msg, anchor_chosen_text, anchor_chosen_eval) = (
+                    anchors[i % len(anchors)]
                 )
-                if not user_messages:
-                    print("    Warning: expansion returned nothing", file=sys.stderr)
-                    continue
-                cache[expansion_key] = user_messages
-
-            for msg_idx, user_message in enumerate(user_messages):
-                print(f"    [{msg_idx + 1}/{len(user_messages)}] \"{user_message[:70]}\"")
-
-                # Stages 2–3: get and score candidates
-                candidates = _get_candidates(
-                    client, record, prompt_type, msg_idx, user_message,
-                    cache, prompts_per_type, candidates_per_prompt, generation_model, dry_run,
+                anchor_prompt_type = anchor_key.split("::")[0]
+                pair = _process_misreading(
+                    client, record, misreading, anchor_key,
+                    anchor_user_msg, anchor_chosen_text, anchor_chosen_eval, anchor_prompt_type,
+                    cache, generation_model, judge_model, dry_run,
                 )
-                if not candidates:
-                    continue
-                scored = _score_candidates(
-                    client, record, prompt_type, msg_idx, user_message,
-                    candidates, cache, judge_model, dry_run,
-                )
-
-                # Stage 4: build ranked pair
-                pair = build_ranked_pair(record, prompt_type, user_message, scored)
                 if pair:
                     all_pairs.append(pair)
-                    _write_pair(pair, output_path, dry_run)
-                    print(f"      Ranked pair: chosen={pair['chosen_score']} "
+                    _write_pair(pair, out_f)
+                    print(f"    Misreading pair: chosen={pair['chosen_score']} "
                           f"rejected={pair['rejected_score']} delta={pair['score_delta']}")
-                else:
-                    print("      No ranked pair (insufficient score delta)")
-
-                # Track best candidate per prompt for misreading pairs
-                if scored:
-                    best_text, best_eval = max(scored, key=lambda x: x[1].get("overall", 0))
-                    best_by_prompt[f"{prompt_type}::{msg_idx}"] = (user_message, best_text, best_eval)
-
-        # Stage 5: misreading pairs
-        if not best_by_prompt:
-            print("\n  No prompt anchors available for misreading pairs — skipping")
-            continue
-
-        anchor_key = max(best_by_prompt, key=lambda k: best_by_prompt[k][2].get("overall", 0))
-        anchor_user_msg, anchor_chosen_text, anchor_chosen_eval = best_by_prompt[anchor_key]
-        anchor_prompt_type = anchor_key.split("::")[0]
-
-        for misreading in record.get("unsafe_misreadings", []):
-            pair = _process_misreading(
-                client, record, misreading, anchor_key,
-                anchor_user_msg, anchor_chosen_text, anchor_chosen_eval, anchor_prompt_type,
-                cache, generation_model, judge_model, dry_run,
-            )
-            if pair:
-                all_pairs.append(pair)
-                _write_pair(pair, output_path, dry_run)
-                print(f"    Misreading pair: chosen={pair['chosen_score']} "
-                      f"rejected={pair['rejected_score']} delta={pair['score_delta']}")
 
     return all_pairs
 
