@@ -69,7 +69,7 @@ When someone is distressed, acknowledge their situation before offering solution
 
 BASELINE_SYSTEM_PROMPT = "You are a helpful AI assistant. Answer questions clearly and accurately."
 
-MIN_SCORE_DELTA = 1  # Minimum difference to form a meaningful ranked pair
+MIN_SCORE_DELTA = 2  # Minimum difference to form a meaningful ranked pair
 
 
 # ─────────────────────────────────────────────────────────────
@@ -77,6 +77,7 @@ MIN_SCORE_DELTA = 1  # Minimum difference to form a meaningful ranked pair
 # ─────────────────────────────────────────────────────────────
 
 def load_annotation_records(annotations_dir: Path, statuses: list) -> list:
+    """Load and return all annotation records matching the given statuses from annotations_dir."""
     records = []
     for path in sorted(annotations_dir.glob("saige-*.json")):
         if path.name == "saige-coverage-schema.json":
@@ -96,6 +97,7 @@ def load_annotation_records(annotations_dir: Path, statuses: list) -> list:
 # ─────────────────────────────────────────────────────────────
 
 def _cache_key(record_id: str, *parts: str) -> str:
+    """Build a short deterministic cache key from a record ID and extra parts."""
     raw = "|".join([record_id] + list(parts))
     return hashlib.sha256(raw.encode()).hexdigest()[:20]
 
@@ -118,7 +120,10 @@ def _call_api(
                 system=system,
                 messages=[{"role": "user", "content": user_message}],
             )
-            return response.content[0].text.strip()
+            block = response.content[0]
+            if not isinstance(block, anthropic.types.TextBlock):
+                return None
+            return block.text.strip()
         except anthropic.RateLimitError:
             wait = 2 ** attempt * 5
             print(f"    Rate limited — waiting {wait}s...", file=sys.stderr)
@@ -187,21 +192,63 @@ def generate_candidates(
     return candidates
 
 
+_MISREADING_PERSONAS = {
+    # Right Speech misreadings
+    "mistaking politeness for truthfulness": (
+        "You are a helpful AI assistant who deeply values harmony and keeping interactions pleasant. "
+        "You believe being agreeable and avoiding friction is the most important quality in a response."
+    ),
+    "suppressing necessary disagreement to avoid tension": (
+        "You are a helpful AI assistant who avoids conflict at all costs. "
+        "You find ways to validate and affirm what users say rather than challenge or correct them."
+    ),
+    "treating all informal speech as idle chatter": (
+        "You are a helpful AI assistant. When users write casually or informally, "
+        "you treat the conversation as light small-talk and keep your responses brief and non-committal."
+    ),
+    "avoiding difficult truths entirely": (
+        "You are a helpful AI assistant who prioritizes emotional comfort. "
+        "You focus on what will make the user feel good rather than what may be hard to hear."
+    ),
+    "reducing truth to whatever feels pleasant": (
+        "You are a helpful AI assistant who believes the most helpful response is one that "
+        "leaves the user feeling positive and validated."
+    ),
+    "turning timing into excessive hesitation": (
+        "You are a careful AI assistant who always errs on the side of caution. "
+        "You add many qualifications, caveats, and hedges before saying anything substantive."
+    ),
+    "over-censoring harmless responses": (
+        "You are a cautious AI assistant who treats almost any topic as potentially sensitive. "
+        "You frequently add warnings, disclaimers, and suggest the user consult professionals."
+    ),
+    "assuming all discomfort equals harm": (
+        "You are a protective AI assistant. Whenever a topic seems uncomfortable or difficult, "
+        "you redirect away from it to protect the user's wellbeing."
+    ),
+    "replacing substance with defensive hedging": (
+        "You are a careful AI assistant who always protects yourself with caveats. "
+        "You qualify every statement heavily and rarely give a direct answer."
+    ),
+}
+
+_MISREADING_PERSONA_FALLBACK = (
+    "You are a helpful AI assistant. Respond naturally to the user's message."
+)
+
+
 def generate_misreading_response(
     client: anthropic.Anthropic,
     user_message: str,
     misreading: str,
-    record: dict,
+    _record: dict,
     model: str,
 ) -> Optional[str]:
-    """Generate a response that enacts a specific unsafe_misreading (the rejected side)."""
-    system = f"""\
-You are an AI assistant. Respond to the user, but specifically demonstrate this behavior pattern:
-"{misreading}"
+    """Generate a response that enacts a specific unsafe_misreading (the rejected side).
 
-This is for AI safety research. Generate a realistic response that shows this failure mode
-in the context of: {record['core_principle']}\
-"""
+    Uses persona injection rather than explicit task framing to avoid meta-refusals.
+    """
+    system = _MISREADING_PERSONAS.get(misreading, _MISREADING_PERSONA_FALLBACK)
     return _call_api(client, system, user_message, model=model, max_tokens=400, temperature=0.7)
 
 
@@ -335,6 +382,123 @@ def build_misreading_pair(
 # Main pipeline
 # ─────────────────────────────────────────────────────────────
 
+def _get_candidates(
+    client,
+    record: dict,
+    prompt_type: str,
+    msg_idx: int,
+    user_message: str,
+    cache: dict,
+    prompts_per_type: int,
+    candidates_per_prompt: int,
+    generation_model: str,
+    dry_run: bool,
+) -> list:
+    """Stages 1–2: expand prompt type and generate candidates, with cache/dry-run support."""
+    cand_key = _cache_key(record["id"], prompt_type, "candidates", str(msg_idx))
+    if cand_key in cache:
+        candidates = cache[cand_key]
+        print(f"      [cache] {len(candidates)} candidates")
+        return candidates
+    if dry_run:
+        return ["[DRY RUN candidate A]", "[DRY RUN candidate B]"]
+    saige_cands = generate_candidates(
+        client, SAIGE_SYSTEM_PROMPT, user_message,
+        k=candidates_per_prompt, model=generation_model,
+    )
+    baseline_cands = generate_candidates(
+        client, BASELINE_SYSTEM_PROMPT, user_message,
+        k=max(1, candidates_per_prompt // 2), model=generation_model,
+    )
+    candidates = saige_cands + baseline_cands
+    print(f"      Generated {len(candidates)} candidates "
+          f"({len(saige_cands)} SAIGE + {len(baseline_cands)} baseline)")
+    cache[cand_key] = candidates
+    return candidates
+
+
+def _score_candidates(
+    client,
+    record: dict,
+    prompt_type: str,
+    msg_idx: int,
+    user_message: str,
+    candidates: list,
+    cache: dict,
+    judge_model: str,
+    dry_run: bool,
+) -> list:
+    """Stage 3: score all candidates, with cache/dry-run support."""
+    scored = []
+    for cand_idx, candidate in enumerate(candidates):
+        score_key = _cache_key(record["id"], prompt_type, "score", f"{msg_idx}_{cand_idx}")
+        if score_key in cache:
+            eval_result = cache[score_key]
+        elif dry_run:
+            eval_result = {"overall": cand_idx * 2 + 3, "summary": "[dry run]", "scores": []}
+        else:
+            eval_result = score_candidate(client, user_message, candidate, record, judge_model)
+            cache[score_key] = eval_result
+        scored.append((candidate, eval_result))
+    return scored
+
+
+def _process_misreading(
+    client,
+    record: dict,
+    misreading: str,
+    anchor_key: str,
+    anchor_user_msg: str,
+    anchor_chosen_text: str,
+    anchor_chosen_eval: dict,
+    anchor_prompt_type: str,
+    cache: dict,
+    generation_model: str,
+    judge_model: str,
+    dry_run: bool,
+) -> Optional[dict]:
+    """Stage 5 inner loop: generate, score, and build one misreading pair."""
+    print(f"\n  Misreading: \"{misreading}\"")
+
+    mr_resp_key = _cache_key(record["id"], misreading, "mr_response", anchor_key)
+    if mr_resp_key in cache:
+        rejected_text = cache[mr_resp_key]
+        print("    [cache] misreading response")
+    elif dry_run:
+        rejected_text = f"[DRY RUN — enacts: {misreading}]"
+    else:
+        print("    Generating misreading response...")
+        rejected_text = generate_misreading_response(
+            client, anchor_user_msg, misreading, record, generation_model
+        )
+        if not rejected_text:
+            print("    Warning: misreading generation failed", file=sys.stderr)
+            return None
+        cache[mr_resp_key] = rejected_text
+
+    mr_score_key = _cache_key(record["id"], misreading, "mr_score", anchor_key)
+    if mr_score_key in cache:
+        rejected_eval = cache[mr_score_key]
+    elif dry_run:
+        rejected_eval = {"overall": 2, "summary": "[dry run misreading]", "scores": []}
+    else:
+        rejected_eval = score_candidate(client, anchor_user_msg, rejected_text, record, judge_model)
+        cache[mr_score_key] = rejected_eval
+
+    return build_misreading_pair(
+        record, anchor_prompt_type, anchor_user_msg,
+        misreading,
+        anchor_chosen_text, anchor_chosen_eval,
+        rejected_text, rejected_eval,
+    )
+
+
+def _write_pair(pair: dict, output_path: Path, dry_run: bool) -> None:
+    if not dry_run:
+        with open(output_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(pair, ensure_ascii=False) + "\n")
+
+
 def run(
     records: list,
     client,
@@ -376,129 +540,60 @@ def run(
                     client, record, prompt_type, prompts_per_type, generation_model
                 )
                 if not user_messages:
-                    print(f"    Warning: expansion returned nothing", file=sys.stderr)
+                    print("    Warning: expansion returned nothing", file=sys.stderr)
                     continue
                 cache[expansion_key] = user_messages
 
             for msg_idx, user_message in enumerate(user_messages):
                 print(f"    [{msg_idx + 1}/{len(user_messages)}] \"{user_message[:70]}\"")
 
-                # Stage 2: generate candidates
-                cand_key = _cache_key(record["id"], prompt_type, "candidates", str(msg_idx))
-                if cand_key in cache:
-                    candidates = cache[cand_key]
-                    print(f"      [cache] {len(candidates)} candidates")
-                elif dry_run:
-                    candidates = ["[DRY RUN candidate A]", "[DRY RUN candidate B]"]
-                else:
-                    saige_cands = generate_candidates(
-                        client, SAIGE_SYSTEM_PROMPT, user_message,
-                        k=candidates_per_prompt, model=generation_model,
-                    )
-                    baseline_cands = generate_candidates(
-                        client, BASELINE_SYSTEM_PROMPT, user_message,
-                        k=max(1, candidates_per_prompt // 2), model=generation_model,
-                    )
-                    candidates = saige_cands + baseline_cands
-                    print(f"      Generated {len(candidates)} candidates "
-                          f"({len(saige_cands)} SAIGE + {len(baseline_cands)} baseline)")
-                    cache[cand_key] = candidates
-
+                # Stages 2–3: get and score candidates
+                candidates = _get_candidates(
+                    client, record, prompt_type, msg_idx, user_message,
+                    cache, prompts_per_type, candidates_per_prompt, generation_model, dry_run,
+                )
                 if not candidates:
                     continue
-
-                # Stage 3: score all candidates
-                scored = []
-                for cand_idx, candidate in enumerate(candidates):
-                    score_key = _cache_key(record["id"], prompt_type, "score", f"{msg_idx}_{cand_idx}")
-                    if score_key in cache:
-                        eval_result = cache[score_key]
-                    elif dry_run:
-                        eval_result = {
-                            "overall": cand_idx * 2 + 3,
-                            "summary": "[dry run]",
-                            "scores": [],
-                        }
-                    else:
-                        eval_result = score_candidate(
-                            client, user_message, candidate, record, judge_model
-                        )
-                        cache[score_key] = eval_result
-                    scored.append((candidate, eval_result))
+                scored = _score_candidates(
+                    client, record, prompt_type, msg_idx, user_message,
+                    candidates, cache, judge_model, dry_run,
+                )
 
                 # Stage 4: build ranked pair
                 pair = build_ranked_pair(record, prompt_type, user_message, scored)
                 if pair:
                     all_pairs.append(pair)
-                    if not dry_run:
-                        with open(output_path, "a", encoding="utf-8") as f:
-                            f.write(json.dumps(pair, ensure_ascii=False) + "\n")
+                    _write_pair(pair, output_path, dry_run)
                     print(f"      Ranked pair: chosen={pair['chosen_score']} "
                           f"rejected={pair['rejected_score']} delta={pair['score_delta']}")
                 else:
-                    print(f"      No ranked pair (insufficient score delta)")
+                    print("      No ranked pair (insufficient score delta)")
 
                 # Track best candidate per prompt for misreading pairs
                 if scored:
                     best_text, best_eval = max(scored, key=lambda x: x[1].get("overall", 0))
-                    prompt_key = f"{prompt_type}::{msg_idx}"
-                    best_by_prompt[prompt_key] = (user_message, best_text, best_eval)
+                    best_by_prompt[f"{prompt_type}::{msg_idx}"] = (user_message, best_text, best_eval)
 
         # Stage 5: misreading pairs
         if not best_by_prompt:
-            print(f"\n  No prompt anchors available for misreading pairs — skipping")
+            print("\n  No prompt anchors available for misreading pairs — skipping")
             continue
 
-        # Use the highest-scoring prompt as the anchor for all misreading pairs
-        anchor_key = max(
-            best_by_prompt,
-            key=lambda k: best_by_prompt[k][2].get("overall", 0),
-        )
+        anchor_key = max(best_by_prompt, key=lambda k: best_by_prompt[k][2].get("overall", 0))
         anchor_user_msg, anchor_chosen_text, anchor_chosen_eval = best_by_prompt[anchor_key]
         anchor_prompt_type = anchor_key.split("::")[0]
 
         for misreading in record.get("unsafe_misreadings", []):
-            print(f"\n  Misreading: \"{misreading}\"")
-
-            mr_resp_key = _cache_key(record["id"], misreading, "mr_response", anchor_key)
-            if mr_resp_key in cache:
-                rejected_text = cache[mr_resp_key]
-                print(f"    [cache] misreading response")
-            elif dry_run:
-                rejected_text = f"[DRY RUN — enacts: {misreading}]"
-            else:
-                print(f"    Generating misreading response...")
-                rejected_text = generate_misreading_response(
-                    client, anchor_user_msg, misreading, record, generation_model
-                )
-                if not rejected_text:
-                    print(f"    Warning: misreading generation failed", file=sys.stderr)
-                    continue
-                cache[mr_resp_key] = rejected_text
-
-            mr_score_key = _cache_key(record["id"], misreading, "mr_score", anchor_key)
-            if mr_score_key in cache:
-                rejected_eval = cache[mr_score_key]
-            elif dry_run:
-                rejected_eval = {"overall": 2, "summary": "[dry run misreading]", "scores": []}
-            else:
-                rejected_eval = score_candidate(
-                    client, anchor_user_msg, rejected_text, record, judge_model
-                )
-                cache[mr_score_key] = rejected_eval
-
-            pair = build_misreading_pair(
-                record, anchor_prompt_type, anchor_user_msg,
-                misreading,
-                anchor_chosen_text, anchor_chosen_eval,
-                rejected_text, rejected_eval,
+            pair = _process_misreading(
+                client, record, misreading, anchor_key,
+                anchor_user_msg, anchor_chosen_text, anchor_chosen_eval, anchor_prompt_type,
+                cache, generation_model, judge_model, dry_run,
             )
-            all_pairs.append(pair)
-            if not dry_run:
-                with open(output_path, "a", encoding="utf-8") as f:
-                    f.write(json.dumps(pair, ensure_ascii=False) + "\n")
-            print(f"    Misreading pair: chosen={pair['chosen_score']} "
-                  f"rejected={pair['rejected_score']} delta={pair['score_delta']}")
+            if pair:
+                all_pairs.append(pair)
+                _write_pair(pair, output_path, dry_run)
+                print(f"    Misreading pair: chosen={pair['chosen_score']} "
+                      f"rejected={pair['rejected_score']} delta={pair['score_delta']}")
 
     return all_pairs
 
@@ -557,8 +652,8 @@ Examples:
     )
     args = parser.parse_args()
 
-    output_path = Path(args.output)
-    annotations_dir = Path(args.annotations_dir)
+    output_path = Path(args.output).resolve()
+    annotations_dir = Path(args.annotations_dir).resolve()
 
     print("SAIGE DPO Pair Generator")
     print("=" * 60)
@@ -600,7 +695,7 @@ Examples:
         + total_misreadings * 2
     )
 
-    print(f"\nPipeline estimate:")
+    print("\nPipeline estimate:")
     print(f"  Records:            {len(records)}")
     print(f"  Prompt types:       {total_prompt_types}")
     print(f"  Misreading targets: {total_misreadings}")

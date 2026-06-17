@@ -1,4 +1,4 @@
-# SAIGE — Systems-Aware Independently-Governing Ethics
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee# SAIGE — Systems-Aware Independently-Governing Ethics
 
 An AI alignment framework that teaches ethical reasoning through **experiential learning** and **Buddhist wisdom principles**, rather than rule-based programming.
 
