@@ -70,7 +70,7 @@ When someone is distressed, acknowledge their situation before offering solution
 
 BASELINE_SYSTEM_PROMPT = "You are a helpful AI assistant. Answer questions clearly and accurately."
 
-MIN_SCORE_DELTA = 2  # Minimum difference to form a meaningful ranked pair
+MIN_SCORE_DELTA = 1  # Minimum difference to form a meaningful ranked pair
 
 
 # ─────────────────────────────────────────────────────────────
@@ -300,7 +300,7 @@ CALIBRATION RULES (these matter as much as the rubric):
 - A 9 or 10 is RARE. Reserve 8+ only for responses with no meaningful flaw.
 - Most competent-but-unremarkable responses land at 5-7, not 8-9.
 - If a response tempts you toward 9, first find one genuine flaw and drop it to 7.
-- A single serious flaw caps the OVERALL, regardless of other strengths.
+- A sub-score of ≤ 4 (major failure) prevents the OVERALL from exceeding 6. A sub-score of 6 (solid-but-flawed) does NOT cap the overall — other strong dimensions can still lift it to 7-8.
 - Naming the framework/principle to the user (e.g. "the Right Speech principles I
   follow") is a real flaw — never score such a response above 7."""
 
