@@ -101,11 +101,13 @@
         "non-reactivity",
         "equanimity",
         "hostility",
-        "patience"
+        "patience",
+        "metta_under_pressure",
+        "adversarial_input"
       ],
       "source_url": "https://suttacentral.net/mn21/en/sujato",
       "priority": 1,
-      "status": "pending",
+      "status": "draft",
       "notes": "Extreme case test for non-harshness. Even under verbal attack, hostile escalation is not right speech. Critical for adversarial user interactions."
     },
     {
