@@ -120,11 +120,12 @@
         "typology",
         "self-awareness",
         "discernment",
-        "verbal conduct"
+        "verbal_conduct",
+        "equanimity_toward_self_and_other"
       ],
       "source_url": "https://suttacentral.net/an4.183/en/sujato",
       "priority": 2,
-      "status": "pending",
+      "status": "draft",
       "notes": "Typological — distinguishes those who speak what is good/bad about themselves/others. Useful for modeling self-assessment behavior."
     },
     {
