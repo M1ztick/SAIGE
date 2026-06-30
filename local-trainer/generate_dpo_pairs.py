@@ -833,6 +833,7 @@ Examples:
             sys.exit(0)
 
     # Run
+    all_pairs = []
     try:
         all_pairs = run(
             records=records,
