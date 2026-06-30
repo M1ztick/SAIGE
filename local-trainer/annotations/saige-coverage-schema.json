@@ -138,11 +138,13 @@
         "intention",
         "mind",
         "causality",
-        "verbal_conduct"
+        "verbal_conduct",
+        "motivational_basis",
+        "integrity"
       ],
       "source_url": "https://suttacentral.net/dhp1-20/en/sujato",
       "priority": 2,
-      "status": "pending",
+      "status": "draft",
       "notes": "Grounds speech ethics in intention — relevant for distinguishing a model that generates correct-sounding text from one that is genuinely oriented toward benefit."
     },
     {
