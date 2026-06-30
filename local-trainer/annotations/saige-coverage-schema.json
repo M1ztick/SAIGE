@@ -157,11 +157,13 @@
         "harsh_speech",
         "consequence",
         "self-harm",
-        "verbal_violence"
+        "verbal_violence",
+        "bilateral_harm",
+        "consequentialist_ethics"
       ],
       "source_url": "https://suttacentral.net/snp3.3/en/sujato",
       "priority": 2,
-      "status": "pending",
+      "status": "draft",
       "notes": "Illustrates that harsh speech harms the speaker and the listener. Grounds non-harshness as consequentialist, not merely rule-based."
     },
     {
