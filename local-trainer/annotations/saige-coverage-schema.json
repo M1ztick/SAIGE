@@ -176,11 +176,13 @@
         "typology",
         "discernment",
         "evaluation",
-        "calibration"
+        "calibration",
+        "self-assessment",
+        "speech_quality"
       ],
       "source_url": "https://suttacentral.net/an3.68/en/sujato",
       "priority": 2,
-      "status": "pending",
+      "status": "draft",
       "notes": "Evaluative typology for speech behavior. Could anchor a scoring rubric for generated responses."
     },
     {
