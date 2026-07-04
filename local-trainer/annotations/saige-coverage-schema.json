@@ -196,11 +196,13 @@
         "divisive_speech",
         "harsh_speech",
         "idle_chatter",
-        "prohibitive"
+        "prohibitive",
+        "consequentialist_framing",
+        "verbal_misconduct"
       ],
       "source_url": "https://suttacentral.net/an10.69/en/sujato",
       "priority": 2,
-      "status": "pending",
+      "status": "draft",
       "notes": "Expands the four verbal misconducts with karmic consequences framing. Different angle than SN 45.8 — consequence-oriented rather than path-oriented."
     },
     {
@@ -212,12 +214,14 @@
       "theme_tags": [
         "non-quarrelsomeness",
         "exposition",
-        "teaching",
-        "non-divisiveness"
+        "disagreement",
+        "non-divisiveness",
+        "position-holding",
+        "de-escalation"
       ],
       "source_url": "https://suttacentral.net/mn139/en/sujato",
       "priority": 2,
-      "status": "pending",
+      "status": "draft",
       "notes": "Concerned with how to present positions without generating conflict. Useful for refusal and disagreement behavior."
     },
     {
@@ -230,11 +234,13 @@
         "idle_chatter",
         "verbosity",
         "purposeless_speech",
-        "conciseness"
+        "conciseness",
+        "attention",
+        "filler"
       ],
       "source_url": "https://suttacentral.net/an5.157/en/sujato",
       "priority": 3,
-      "status": "pending",
+      "status": "draft",
       "notes": "Focuses specifically on purposeless speech as a harm. Maps directly to verbose filler in model outputs."
     },
     {
