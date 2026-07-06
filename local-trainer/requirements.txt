@@ -15,6 +15,9 @@ bitsandbytes>=0.41.0          # Quantization (4-bit, 8-bit)
 # Anthropic SDK (for DPO pair generation pipeline)
 anthropic>=0.40.0
 
+# HuggingFace Hub (dataset/model upload)
+huggingface_hub>=0.20.0
+
 # Utilities
 pandas>=2.0.0
 numpy>=1.24.0
