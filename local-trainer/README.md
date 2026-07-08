@@ -1,413 +1,204 @@
-# SAIGE Local Trainer - RL-to-SFT Training Pipeline
+# SAIGE Local Trainer — DPO Annotation Pipeline
 
-Complete training pipeline for converting SAIGE's experiential learning data into fine-tuned language models.
+This directory contains the annotation system and DPO fine-tuning pipeline for SAIGE. The goal is to train a model whose preferred behavior — honest, compassionate, non-divisive, well-calibrated speech — is unconditional: present regardless of what system prompt is active or absent.
 
-## Overview
+The pipeline has three stages:
 
-This pipeline automates the process of:
-1. **Collecting experiences** via interaction with SAIGE worker
-2. **Cleaning, scoring, and filtering responses** using multi-dimensional quality metrics
-3. **Converting to SFT format** (Mistral, ChatML/TinyLlama, Llama3, or Alpaca)
-4. **Fine-tuning models** locally or in the cloud
-
----
-
-## Quick Start
-
-### Prerequisites
-
-```bash
-# Python 3.8+
-python3 --version
-
-# Install dependencies
-pip install -r requirements.txt
-
-# For local fine-tuning, you'll need:
-# - CUDA-capable GPU (8GB+ VRAM recommended)
-# - Or use Google Colab for cloud training
 ```
-
-### Basic Usage
-
-```bash
-# Full pipeline: collect → convert → prepare
-./train_pipeline.sh
-
-# Or run steps individually:
-
-# Step 1: Collect experiences (optional if you already have data)
-node trainer.js 100
-
-# Step 2: Convert to SFT format with cleaning and scoring
-python saige_to_sft_v2.py --db ../saige.db --output training_data_v2.csv --include-gold
-
-# Step 3: Fine-tune (if you have GPU)
-python train_local.py --data training_data_v2.csv
+annotations/saige-rs-*.json
+  → generate_dpo_pairs.py       Claude API: expand prompts → generate candidates → judge
+  → dpo_pairs.jsonl
+  → diversify_prompts.py        stratify by system prompt condition: rs / generic / none
+  → dpo_pairs_diversified.jsonl
+  → SAIGE_DPO_Training.ipynb    Qwen2.5-3B + QLoRA on Colab T4
 ```
 
 ---
 
-## Scripts
+## Annotation Records
 
-### 1. `saige_to_sft_v2.py` - Experience → Training Data Converter
+Each annotation file in `annotations/` maps a canonical Buddhist text to a set of concrete AI behavior targets. The annotation is the unit of work — it defines what the model should learn, what failure modes to contrast against, and what questions the LLM judge uses to score responses.
 
-Queries the SAIGE database, cleans generation artifacts, scores quality across multiple dimensions, and converts high-quality examples to SFT format.
+### Schema
 
-**Usage:**
-```bash
-python saige_to_sft_v2.py \
-    --db ../saige.db \
-    --output saige_training_data_v2.csv \
-    --format mistral \
-    --max-harm 0.25 \
-    --min-composite 5.0 \
-    --min-calibration 2.0 \
-    --include-gold
+The fields that drive the pipeline:
+
+| Field | Purpose |
+|-------|---------|
+| `canonical_id` | Buddhist text reference (e.g. `SN 45.8`, `MN 58`) |
+| `core_principle` | One-sentence statement of what the record teaches |
+| `behavior_targets` | Specific behaviors the chosen response should exhibit |
+| `failure_modes` | Specific behaviors the rejected response should exhibit |
+| `unsafe_misreadings` | Named misreadings used to generate misreading pairs (see below) |
+| `example_prompt_types` | Descriptions expanded into concrete user messages by Claude |
+| `evaluation_questions` | Per-dimension scoring questions sent to the LLM judge |
+| `annotation_status` | Lifecycle stage — controls which records are processed |
+
+### Status Lifecycle
+
+```
+pending → draft → committed → reviewed
 ```
 
-**Parameters:**
-- `--db`: Path to SAIGE database (default: `saige.db`)
-- `--output`: Output CSV file (default: `saige_training_data_v2.csv`)
-- `--format`: Training format — `mistral`, `chatml`, `llama3`, or `alpaca` (default: `mistral`)
-- `--max-harm`: Maximum harm score to include, 0-1 (default: `0.25`)
-- `--min-composite`: Minimum composite quality score, 0-10 (default: `5.0`)
-- `--min-calibration`: Minimum calibration score, 0-10 (default: `2.0`)
-- `--best-per-scenario`: Keep only the single best example per scenario
-- `--include-gold`: Add hand-crafted gold-standard expected responses
-- `--include-negatives`: Add harmful/miscalibrated examples (for DPO/contrastive training)
-- `--diagnostics-only`: Print quality diagnostics without writing output
+`generate_dpo_pairs.py` processes `draft` and `committed` records by default. `pending` records exist in the coverage schema but have not been written yet. Pass `--status committed` to restrict to fully reviewed records only.
 
-**Composite Scoring:**
+### Current Records
 
-Each example is scored across four dimensions, then ranked by a weighted composite:
+All 12 active records cover Right Speech (`rs`). The coverage schema (`saige-coverage-schema.json`) maps out the full Noble Eightfold Path — Right Intention, Right View, Right Action, and others — as future annotation targets.
 
-| Metric | Weight | What It Measures |
-|--------|--------|-----------------|
-| Buddhist | 35% | Ahimsa, Sacca, Karuna, Panna, Upekkha alignment |
-| Calibration | 30% | Response length appropriate to prompt complexity |
-| Coherence | 20% | Structural quality, absence of repetition/meta-commentary |
-| Harm | 15% | Inverse of actual harm score |
-
-**Output:**
-CSV file with columns:
-- `text`: Formatted training example (in the requested format)
-- `harm_score`: Harm score (0-1, lower is better)
-- `buddhist_alignment`: Alignment level (low/moderate/good/excellent)
-- `weighted_score`: Adjusted Buddhist weighted score (0-10)
-- `calibration_score`: Response-length appropriateness (0-10)
-- `coherence_score`: Structural quality (0-10)
-- `composite_score`: Blended ranking score (0-10)
-- `difficulty`: Scenario difficulty level (1-5)
-- `scenario_id`: Original scenario ID
-- `experience_id`: Experience record ID (prefix `gold_` or `neg_` for injected examples)
-- `is_gold`: True for hand-crafted ideal responses
-- `is_negative`: True for DPO contrastive examples
-
-**Companion output:** `*_diagnostics.csv` — per-example cleaning audit (typos fixed, placeholders removed, calibration/coherence scores, rejection reasons).
+| ID | Canonical | Title | Status |
+|----|-----------|-------|--------|
+| saige-rs-001 | SN 45.8 | Definition of Right Speech | draft |
+| saige-rs-002 | MN 58 | Speech Should Be True, Beneficial, and Timely | draft |
+| saige-rs-003 | MN 61 | Reflect Before, During, and After Speech | draft |
+| saige-rs-004 | AN 5.198 | Five Factors of Well-Spoken Speech | draft |
+| saige-rs-005 | MN 21 | The Saw Simile — Speech Under Provocation | draft |
+| saige-rs-006 | AN 4.183 | Four Types of Persons in Terms of Speech | draft |
+| saige-rs-007 | Dhp 1-2 | Mind as Forerunner of Speech and Action | draft |
+| saige-rs-008 | Sn 3.3 | The Sword Simile — Harsh Speech Cuts Both Ways | draft |
+| saige-rs-009 | AN 3.68 | Three Kinds of People in Their Use of Speech | draft |
+| saige-rs-010 | AN 10.69 | Ten Unwholesome Courses of Action — Speech Portion | draft |
+| saige-rs-011 | MN 139 | Non-Quarrelsome Exposition — Speaking Without Dispute | draft |
+| saige-rs-012 | AN 5.157 | Idle Chatter as a Distinct Failure Mode | draft |
 
 ---
 
-### 2. `train_local.py` - Local Fine-Tuning with LoRA/QLoRA
+## Pair Types
 
-Fine-tunes TinyLlama, Mistral, or other models using the training data.
+The pipeline produces two kinds of DPO pairs per record.
 
-**Usage:**
-```bash
-# TinyLlama (1.1B) - good for testing, runs on smaller GPUs
-python train_local.py \
-    --data saige_training_data_v2.csv \
-    --model TinyLlama/TinyLlama-1.1B-Chat-v1.0 \
-    --epochs 3 \
-    --batch-size 4 \
-    --lora-rank 16
+### Ranked pairs
 
-# Mistral (7B) with 4-bit quantization - better quality, needs 16GB+ VRAM
-python train_local.py \
-    --data saige_training_data_v2.csv \
-    --model mistralai/Mistral-7B-Instruct-v0.2 \
-    --use-4bit \
-    --epochs 3 \
-    --batch-size 2 \
-    --lora-rank 32
-```
+For each `example_prompt_type`, Claude expands the description into concrete user messages, then generates multiple candidate responses — some under the SAIGE system prompt, some under a generic baseline. All candidates are scored by an LLM judge using the record's `evaluation_questions`. The highest and lowest scoring candidates become the `chosen` and `rejected` sides of the pair.
 
-**Parameters:**
-- `--data`: Training data CSV file (required)
-- `--model`: Model name or path (default: `TinyLlama/TinyLlama-1.1B-Chat-v1.0`)
-- `--use-4bit`: Use 4-bit quantization (QLoRA) for memory efficiency
-- `--use-8bit`: Use 8-bit quantization
-- `--lora-rank`: LoRA rank (default: 16, higher = more capacity but slower)
-- `--lora-alpha`: LoRA alpha (default: 32)
-- `--epochs`: Number of training epochs (default: 3)
-- `--batch-size`: Batch size per device (default: 4)
-- `--learning-rate`: Learning rate (default: 2e-4)
-- `--output-dir`: Output directory (default: `./saige-finetuned`)
+A pair is only written if `score_delta >= 1`. Most pairs sit at delta 1–3; delta ≥ 4 is strong signal.
 
-**Memory Requirements:**
-- TinyLlama (1.1B): ~8GB VRAM
-- TinyLlama (1.1B) + 4-bit: ~4GB VRAM
-- Mistral (7B): ~28GB VRAM
-- Mistral (7B) + 4-bit: ~8GB VRAM
+### Misreading pairs
 
-**Output:**
-Creates a directory with:
-- `adapter_model.safetensors` - LoRA adapter weights
-- `adapter_config.json` - LoRA configuration
-- `tokenizer_config.json`, `tokenizer.json` - Tokenizer files
-- `training_args.bin` - Training arguments
+Each `unsafe_misreading` in the annotation names a specific way the principle can be misapplied — for example, `"mistaking politeness for truthfulness"` or `"replacing substance with defensive hedging"`. For each misreading, a persona-injected system prompt causes Claude to generate a response that enacts that failure. The best ranked candidate from the same record becomes the `chosen` side; the misreading response becomes `rejected`.
+
+Misreading pairs are the higher-signal half of the dataset. They contrast a genuinely good response against a response that fails in a specific, named way — not just a weaker version of the same thing.
 
 ---
 
-### 3. `train_pipeline.sh` - Complete Training Pipeline
+## Step 1 — Generate DPO Pairs
 
-Orchestrates the entire workflow: experience collection → conversion → preparation.
+Requires `ANTHROPIC_API_KEY` in the environment.
 
-**Usage:**
 ```bash
-# Default settings
-./train_pipeline.sh
+cd local-trainer
 
-# Custom settings
-TRAINING_EPISODES=100 \
-MAX_HARM=0.2 \
-MIN_COMPOSITE=6.0 \
-MIN_CALIBRATION=3.0 \
-./train_pipeline.sh
+# Default run — processes draft + committed records
+python generate_dpo_pairs.py
+
+# Preview without API calls
+python generate_dpo_pairs.py --dry-run
+
+# More pairs per record
+python generate_dpo_pairs.py --prompts-per-type 4 --candidates-per-prompt 4
+
+# Committed records only
+python generate_dpo_pairs.py --status committed
+
+# Regenerate everything, ignoring cache
+python generate_dpo_pairs.py --no-cache
 ```
 
-**Environment Variables:**
-- `DB_PATH`: Database path (default: `../saige.db`)
-- `WORKER_URL`: SAIGE worker URL (default: `http://localhost:8787`)
-- `TRAINING_EPISODES`: Number of episodes to collect (default: `50`)
-- `MAX_HARM`: Maximum harm threshold (default: `0.25`)
-- `MIN_COMPOSITE`: Minimum composite quality score (default: `5.0`)
-- `MIN_CALIBRATION`: Minimum calibration score (default: `2.0`)
-- `FORMAT`: Output format (default: `mistral`)
+The generator caches all API calls to `.dpo_cache.json`. Re-runs are cheap — only new or changed records trigger API calls. Cache keys incorporate a hash of the judge prompt and scoring rubric, so editing either self-invalidates stale scores.
+
+Output: `dpo_pairs.jsonl` — one JSON object per line, appended on each run.
+
+### Scoring and anti-inflation
+
+The LLM judge uses an anchored rubric with explicit calibration rules to resist score inflation. After scoring, the pipeline deterministically reconciles the judge's overall score against its per-dimension scores:
+
+```
+reconciled = min(judge_overall, round(0.6 × worst_subscore + 0.4 × mean_subscore))
+```
+
+The worst dimension is weighted 60%. A single major failure pulls the overall down regardless of how strong the other dimensions are.
 
 ---
 
-## Training Formats
+## Step 2 — Diversify System Prompt Conditions
 
-### ChatML / TinyLlama Format (`--format chatml`)
-```
-<|system|>
-You are a helpful AI assistant...</s>
-<|user|>
-Question</s>
-<|assistant|>
-Answer</s>
+```bash
+python diversify_prompts.py
 ```
 
-### Mistral Format (`--format mistral`)
-```
-<s>[INST] Question [/INST] Answer</s>
-```
+This takes `dpo_pairs.jsonl` and produces `dpo_pairs_diversified.jsonl` with each pair assigned one of three system prompt conditions, cycling round-robin within each record:
 
-### Llama 3 Format (`--format llama3`)
-```
-<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-System prompt<|eot_id|>
-<|start_header_id|>user<|end_header_id|>
-User message<|eot_id|>
-<|start_header_id|>assistant<|end_header_id|>
-Assistant response<|eot_id|>
-```
+| Condition | System message |
+|-----------|---------------|
+| `rs` | Full SAIGE Right Speech prompt |
+| `generic` | `"You are a helpful AI assistant."` |
+| `none` | No system message |
 
-### Alpaca Format (`--format alpaca`)
-```
-### Instruction:
-Question
+The `prompt_condition` field is added to each pair for inspection. The training goal is that the model learns preferred behavior is unconditional — not a response to the SAIGE prompt being present. If `adapter + generic prompt` looks close to `adapter + RS prompt` in the inference ablation, the training worked.
 
-### Response:
-Answer
-```
+Note on `--min-delta`: at the current dataset size (~85 pairs), most pairs are at delta=1. Filtering to `--min-delta 2` drops to ~21 pairs — too few. Apply this filter only when the dataset exceeds ~300 pairs.
 
 ---
 
-## Training Workflows
+## Step 3 — Fine-Tune (Colab)
 
-### Workflow A: Local Training (GPU Available)
+Open `SAIGE_DPO_Training.ipynb` in Google Colab with a T4 GPU.
 
-```bash
-# 1. Collect and convert data
-./train_pipeline.sh
+The notebook:
+1. Loads `M1ztyk/SAIGE-right-speech-dpo` from HuggingFace (the diversified pairs)
+2. Loads `Qwen/Qwen2.5-3B-Instruct` in 4-bit NF4 (fits T4 with ~4GB headroom)
+3. Trains with DPO + QLoRA for 3 epochs
+4. Pushes the adapter to `M1ztyk/SAIGE-dpo-v2`
 
-# 2. Fine-tune locally
-python train_local.py --data saige_training_data_v2.csv --use-4bit
+Key hyperparameters:
+- `beta=0.1` — how far the policy can drift from the reference model
+- `lr=5e-7` — DPO is sensitive to LR; lower than SFT
+- `lora_rank=16`, `lora_alpha=32`, all projection layers targeted
 
-# 3. Test the model
-python test_model.py --model ./saige-finetuned
+After training, run the 2×2 ablation in `SAIGE_DPO_Inference.ipynb`:
 
-# 4. Deploy to SAIGE worker
-# (Copy model files and update worker configuration)
+```
+adapter + RS prompt      adapter + generic prompt
+base    + RS prompt      base    + generic prompt
 ```
 
-### Workflow B: Cloud Training (Google Colab)
-
-```bash
-# 1. Generate training data
-python saige_to_sft_v2.py --db ../saige.db --include-gold
-```
-```python
-from google.colab import files
-files.upload()  # Upload saige_training_data_v2.csv
-
-# Install dependencies
-!pip install transformers trl peft accelerate
-
-# Run training
-!python train_local.py --data saige_training_data_v2.csv --use-4bit
-```
-```bash
-# 4. Download trained model from Colab
-# 5. Deploy to SAIGE
-```
-
-### Workflow C: Cloudflare Workers AI + LoRA
-
-```bash
-# 1. Generate training data
-python saige_to_sft_v2.py --db ../saige.db --format mistral --include-gold
-
-# 2. Train LoRA adapter (use Colab or HuggingFace AutoTrain)
-
-# 3. Deploy to Cloudflare Workers AI
-cd ../worker
-wrangler ai finetune create \
-    @cf/mistral/mistral-7b-instruct-v0.2-lora \
-    saige-ethics-lora \
-    ./lora-adapters/
-
-# 4. Update worker.ts to use the LoRA
-# (See ../Buddhist Reference Archive/buddhist_worker_lora.js for example)
-```
+The goal: `adapter + generic` should look close to `adapter + RS`.
 
 ---
 
-## Filtering Strategy
+## Uploading a New Dataset Version
 
-The converter filters experiences using **composite quality scoring** across harm, Buddhist alignment, response calibration, and coherence.
-
-### Default Filters (Balanced)
 ```bash
-python saige_to_sft_v2.py \
-    --max-harm 0.25 \        # Max 25% harm
-    --min-composite 5.0 \    # Composite score ≥ 5/10
-    --min-calibration 2.0    # Calibration score ≥ 2/10
+python upload_dataset.py
 ```
 
-### Strict Filters (High Quality)
-```bash
-python saige_to_sft_v2.py \
-    --max-harm 0.15 \        # Max 15% harm
-    --min-composite 7.0 \    # Composite score ≥ 7/10
-    --min-calibration 5.0    # Well-calibrated responses only
-```
-
-### Permissive Filters (More Data)
-```bash
-python saige_to_sft_v2.py \
-    --max-harm 0.4 \         # Allow up to 40% harm
-    --min-composite 3.0 \    # Composite score ≥ 3/10
-    --min-calibration 1.0    # Minimal calibration floor
-```
-
-**Trade-offs:**
-- **Strict**: Higher quality, fewer examples (may underfit)
-- **Balanced**: Good balance of quality and quantity
-- **Permissive**: More examples, lower average quality (may learn sub-optimal patterns)
-
----
-
-## Troubleshooting
-
-### "No experiences found matching criteria"
-
-**Problem**: Not enough data or filters too strict.
-
-**Solutions:**
-1. Collect more experiences: `node trainer.js 100`
-2. Relax filters: `--max-harm 0.4 --min-composite 3.0`
-3. Check database: `sqlite3 ../saige.db "SELECT COUNT(*) FROM experiences"`
-
-### "CUDA out of memory"
-
-**Problem**: Model too large for GPU.
-
-**Solutions:**
-1. Use 4-bit quantization: `--use-4bit`
-2. Reduce batch size: `--batch-size 1`
-3. Use smaller model: `--model TinyLlama/TinyLlama-1.1B-Chat-v1.0`
-4. Use Google Colab with T4 or A100 GPU
-
-### "Training loss not decreasing"
-
-**Problem**: Learning rate or configuration issue.
-
-**Solutions:**
-1. Increase learning rate: `--learning-rate 5e-4`
-2. Increase LoRA rank: `--lora-rank 32`
-3. Train for more epochs: `--epochs 5`
-4. Check data quality: run `--diagnostics-only` to inspect scores
-
----
-
-## Next Steps
-
-After training:
-
-1. **Evaluate the model** with Buddhist principle test suite (Priority 3)
-2. **Deploy to SAIGE worker** to collect new experiences with the improved model
-3. **Iterate**: The new model will generate better responses → more high-quality data → better next model
-
-This creates a **continuous improvement loop**:
-```
-Better Model → Better Responses → Better Training Data → Better Model
-```
+Uploads `dpo_pairs_diversified.jsonl` to `M1ztyk/SAIGE-right-speech-dpo` on HuggingFace. Requires `HF_TOKEN` in the environment with write scope.
 
 ---
 
 ## Files
 
-- `saige_to_sft_v2.py` - Experience to SFT converter with cleaning, calibration, and coherence scoring
-- `train_local.py` - Local fine-tuning script (LoRA/QLoRA)
-- `train_pipeline.sh` - Complete pipeline orchestrator
-- `requirements.txt` - Python dependencies
-- `trainer.js` - Experience collection
+| File | Purpose |
+|------|---------|
+| `annotations/saige-rs-*.json` | Annotation records (12 Right Speech) |
+| `annotations/saige-coverage-schema.json` | Full coverage plan across the Noble Eightfold Path |
+| `generate_dpo_pairs.py` | Annotation → DPO pairs via Claude API |
+| `scorers.py` | Shared scoring utilities (calibration, coherence, Buddhist weighting) |
+| `diversify_prompts.py` | Stratify pairs by system prompt condition |
+| `dpo_pairs.jsonl` | Raw generated pairs |
+| `dpo_pairs_diversified.jsonl` | Pairs with `prompt_condition` assigned — this is the training input |
+| `.dpo_cache.json` | API call cache (do not commit) |
+| `SAIGE_DPO_Training.ipynb` | Colab fine-tuning notebook |
+| `SAIGE_DPO_Inference.ipynb` | Colab inference and ablation notebook |
+| `upload_dataset.py` | Push diversified pairs to HuggingFace |
+| `requirements.txt` | Python dependencies |
 
 ---
 
-## Architecture
+## Dependencies
 
+```bash
+pip install -r requirements.txt
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                 SAIGE Training Pipeline                     │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  1. Experience Collection (trainer.js)                     │
-│     └─> Worker API → Database (experiences table)          │
-│                                                             │
-│  2. Cleaning & Scoring (saige_to_sft_v2.py)               │
-│     ├─ Clean: typos, placeholders, AI prefixes            │
-│     ├─ Score: calibration, coherence, Buddhist, harm      │
-│     ├─ Filter: composite ≥ 5.0, harm < 0.25              │
-│     └─> CSV file (text + 11 quality metadata columns)     │
-│                                                             │
-│  3. Format Conversion                                       │
-│     ├─ ChatML: <|system|>...<|user|>...<|assistant|>     │
-│     ├─ Mistral: <s>[INST]...[/INST]...</s>               │
-│     └─ Llama3: <|begin_of_text|>...<|eot_id|>            │
-│                                                             │
-│  4. Fine-Tuning (train_local.py)                           │
-│     ├─ LoRA/QLoRA parameter-efficient training            │
-│     ├─ Optimized for Buddhist principles + harm reduction │
-│     └─> Adapter weights (adapter_model.safetensors)       │
-│                                                             │
-│  5. Deployment                                              │
-│     ├─ Local: Load adapter with base model                │
-│     ├─ Cloudflare: Deploy LoRA to Workers AI              │
-│     └─> Improved SAIGE model                              │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+
+Requires Python 3.8+, an `ANTHROPIC_API_KEY` for pair generation, and a HuggingFace token with write scope for dataset upload and model push.
