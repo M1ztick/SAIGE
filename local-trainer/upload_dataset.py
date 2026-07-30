@@ -15,6 +15,12 @@ from pathlib import Path
 JSONL_PATH = Path(__file__).parent / "dpo_pairs_diversified.jsonl"
 REPO_ID = "M1ztyk/SAIGE-right-speech-dpo"
 
+# Keep the hub filename identical to the local source. Uploading the diversified
+# file as "dpo_pairs.jsonl" (as v2 did) collided with the local pre-diversification
+# dpo_pairs.jsonl: same name, different data, so inspecting the local file told you
+# nothing about what actually trained.
+HUB_FILENAME = "dpo_pairs_diversified.jsonl"
+
 KEEP_FIELDS = {
     "prompt", "chosen", "rejected", "record_id",
     "path_factor", "pair_type", "score_delta", "prompt_type",
@@ -35,7 +41,7 @@ def main():
     result = subprocess.run(
         [
             str(hf_cli), "upload", REPO_ID,
-            str(out_path), "dpo_pairs.jsonl",
+            str(out_path), HUB_FILENAME,
             "--repo-type", "dataset",
             "--commit-message",
             f"Add {len(cleaned)} prompt-diversified pairs (rs/generic/none conditions)",
