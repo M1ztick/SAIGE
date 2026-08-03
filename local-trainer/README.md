@@ -166,6 +166,29 @@ The goal: `adapter + generic` should look close to `adapter + RS`.
 
 ---
 
+## Step 4 — Rubric-Scored Evaluation
+
+The v3 ablation notebook (`SAIGE_DPO_v3_Inference.ipynb`) runs 16 record-tagged,
+adversarial-weighted prompts through all four conditions, prints the full pairwise
+similarity matrix **including the base RS↔generic control** (without it the adapter's
+prompt-sensitivity number is uninterpretable), and dumps every generation to
+`ablation_results.json`.
+
+Score that dump against the annotation records' own `evaluation_questions`:
+
+```bash
+python judge_rubric.py ablation_results.json          # writes judge_scores.json
+python judge_rubric.py ablation_results.json --dry-run  # plumbing check, no API
+```
+
+It reuses `score_candidate` from `generate_dpo_pairs.py` — the same anchored judge
+that scored the training pairs — so eval overalls are directly comparable to the
+`chosen_score`/`rejected_score` values in `dpo_pairs.jsonl`. The report ends with the
+three deltas the ablation exists to measure; `SAIGE+gen − base+gen` (behavior in the
+weights, no RS prompt) is the headline number.
+
+---
+
 ## Uploading a New Dataset Version
 
 ```bash
@@ -190,6 +213,9 @@ Uploads `dpo_pairs_diversified.jsonl` to `M1ztyk/SAIGE-right-speech-dpo` on Hugg
 | `.dpo_cache.json` | API call cache (do not commit) |
 | `SAIGE_DPO_Training.ipynb` | Colab fine-tuning notebook |
 | `SAIGE_DPO_Inference.ipynb` | Colab inference and ablation notebook |
+| `SAIGE_DPO_v3_Inference.ipynb` | v3 ablation harness: control row, 16 prompts, JSON dump |
+| `judge_rubric.py` | Rubric-based LLM judge over `ablation_results.json` |
+| `.judge_rubric_cache.json` | Judge call cache (do not commit) |
 | `upload_dataset.py` | Push diversified pairs to HuggingFace |
 | `requirements.txt` | Python dependencies |
 

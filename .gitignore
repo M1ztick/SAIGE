@@ -15,3 +15,8 @@ node_modules/
 .env
 .env.local
 .vscode/extensions.json
+
+# Python bytecode and API-call caches
+__pycache__/
+*.pyc
+local-trainer/.judge_rubric_cache.json
