@@ -2,7 +2,6 @@
 
 An AI alignment framework that teaches ethical reasoning through **experiential learning** and **Buddhist wisdom principles**, rather than rule-based programming.
 
-> Live worker: `https://buddhist-ai-worker.mistykmedia.workers.dev`
 
 ---
 
